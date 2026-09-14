@@ -1,5 +1,5 @@
 /* Ekstruzja - offline cache. Bump CACHE on every release. */
-const CACHE = "ekstruzja-v24";
+const CACHE = "ekstruzja-v32";
 const FILES = ["./", "./index.html", "./manifest.json",
                "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png"];
 
