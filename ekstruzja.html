@@ -1,0 +1,1458 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#14508C">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
+<title>Ekstruzja</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2314508C'/%3E%3Crect x='8' y='29' width='48' height='6' rx='3' fill='%23fff'/%3E%3Crect x='19' y='20' width='26' height='24' rx='3' fill='%23D4890B'/%3E%3C/svg%3E">
+<style>
+  :root{--steel:#E5E9ED;--panel:#FFF;--ink:#111820;--dim:#5B6B7B;--blue:#14508C;--blue-d:#0E3C6B;
+    --amber:#D4890B;--amber-bg:#FDF3E0;--edge:#C9D2DA;--ok:#27724A;--ok-bg:#E9F4EE;
+    --bad:#B3261E;--bad-bg:#FBECEB;--r:10px}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{background:var(--steel);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    font-size:16px;line-height:1.45;padding-bottom:env(safe-area-inset-bottom);overflow-x:hidden}
+  .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+  button,input,select{font:inherit;color:inherit}
+  button{cursor:pointer;border:0;background:none}
+  :focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+  .bar{position:sticky;top:0;z-index:40;background:var(--blue);color:#fff;display:flex;align-items:center;gap:6px;
+    padding:calc(10px + env(safe-area-inset-top)) 10px 10px;box-shadow:0 1px 0 rgba(0,0,0,.25)}
+  .burger{width:42px;height:42px;display:grid;place-items:center;border-radius:8px;flex:0 0 auto}
+  .burger:active{background:var(--blue-d)}
+  .burger span{display:block;width:20px;height:2px;background:#fff;box-shadow:0 -6px 0 #fff,0 6px 0 #fff}
+  .ttl{flex:1;min-width:0}
+  .ttl b{font-size:1.05rem;font-weight:650;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ttl small{display:block;font-size:.7rem;font-weight:400;opacity:.75;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lang{display:flex;border:1px solid rgba(255,255,255,.45);border-radius:8px;overflow:hidden;flex:0 0 auto}
+  .lang button{padding:7px 10px;font-size:.78rem;font-weight:600;color:#fff;opacity:.65}
+  .lang button[aria-pressed="true"]{background:#fff;color:var(--blue);opacity:1}
+  .scrim{position:fixed;inset:0;background:rgba(10,20,30,.5);opacity:0;pointer-events:none;transition:opacity .18s;z-index:50}
+  .scrim.on{opacity:1;pointer-events:auto}
+  .drawer{position:fixed;top:0;left:0;bottom:0;width:min(86vw,330px);z-index:60;background:var(--panel);
+    transform:translateX(-102%);transition:transform .2s ease-out;display:flex;flex-direction:column;box-shadow:2px 0 14px rgba(10,20,30,.3)}
+  .drawer.on{transform:none}
+  .drawer header{background:var(--blue);color:#fff;padding:calc(14px + env(safe-area-inset-top)) 16px 14px}
+  .drawer header b{font-size:1.1rem;display:block}
+  .drawer header span{font-size:.75rem;opacity:.75}
+  .dlist{overflow:auto;padding:0 0 20px;flex:1}
+  .grp{font-size:.72rem;color:var(--dim);padding:14px 16px 4px;font-weight:700;letter-spacing:.4px}
+  .ln{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 16px;border-bottom:1px solid #EEF1F4}
+  .ln:active{background:#F2F5F8}
+  .ln i{width:4px;height:30px;border-radius:2px;background:var(--edge);flex:0 0 auto}
+  .ln[data-g="PA"] i{background:var(--blue)} .ln[data-g="PP"] i{background:var(--ok)}
+  .ln[data-g="X"] i{background:var(--amber)}
+  .ln div{flex:1;min-width:0}
+  .ln b{font-weight:600;font-size:.98rem;display:block}
+  .ln em{font-style:normal;font-size:.76rem;color:var(--dim);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ln[aria-current="true"]{background:#EDF3FA} .ln[aria-current="true"] b{color:var(--blue)}
+  main{padding:12px 12px 34px;max-width:640px;margin:0 auto}
+  section{background:var(--panel);border:1px solid var(--edge);border-radius:var(--r);margin-bottom:12px}
+  section>h2{font-size:.8rem;font-weight:700;color:var(--dim);margin:0;padding:11px 14px 0}
+  .pad{padding:10px 14px 14px}
+  .doff{border-left:6px solid var(--amber)} .doff.late{border-left-color:var(--bad)} .doff.stop{border-left-color:var(--dim)}
+  .status{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #EDF0F3}
+  .dot{width:12px;height:12px;border-radius:50%;background:var(--ok);flex:0 0 auto;box-shadow:0 0 0 4px var(--ok-bg)}
+  .dot.off{background:var(--bad);box-shadow:0 0 0 4px var(--bad-bg)}
+  .status b{flex:1;font-size:.95rem}
+  .status b em{display:block;font-style:normal;font-size:.76rem;color:var(--dim);font-weight:400}
+  .tgl{padding:10px 14px;border-radius:8px;border:1px solid var(--edge);font-size:.85rem;font-weight:650;color:var(--blue);background:#fff;flex:0 0 auto}
+  .tgl:active{background:#EDF3FA} .tgl.back{background:var(--ok);border-color:var(--ok);color:#fff}
+  .clock{font-size:clamp(2.7rem,15vw,3.6rem);font-weight:700;line-height:1;letter-spacing:-1px;margin:6px 0 2px}
+  .doff.late .clock{color:var(--bad)} .doff.soon .clock{color:var(--amber)}
+  .sub{font-size:.9rem;color:var(--dim)} .sub b{color:var(--ink);font-weight:650}
+  .btn{display:block;width:100%;margin-top:12px;padding:14px;border-radius:8px;background:var(--amber);color:#fff;font-weight:650}
+  .btn:active{background:#B8760A}
+  .btn.ghost{background:none;border:1px solid var(--edge);color:var(--dim);font-weight:600;font-size:.88rem;padding:11px}
+  .btn.ghost:active{background:#F2F5F8}
+  .btn.blue{background:var(--blue)} .btn.blue:active{background:var(--blue-d)}
+  .rows{display:grid;grid-template-columns:1fr auto;gap:0 12px;align-items:baseline}
+  .rows>div{padding:8px 0;border-bottom:1px solid #EDF0F3;font-size:.92rem;color:var(--dim)}
+  .rows>div:nth-child(2n){text-align:right;color:var(--ink);font-weight:650;font-size:1rem}
+  .rows>div:nth-last-child(-n+2){border-bottom:0}
+  .big{font-size:1.3rem !important;font-weight:700 !important}
+  .prog{height:8px;background:#E3E8ED;border-radius:4px;overflow:hidden;margin:10px 0 6px}
+  .prog i{display:block;height:100%;background:var(--blue);border-radius:4px;transition:width .4s}
+  .prog.amber i{background:var(--amber)}
+  .flag{border-radius:8px;padding:10px 12px;font-size:.92rem;font-weight:600;margin:10px 0 2px}
+  .flag.ok{background:var(--ok-bg);color:var(--ok)} .flag.bad{background:var(--bad-bg);color:var(--bad)}
+  .flag.warn{background:var(--amber-bg);color:#8A5A06} .flag.n{background:#F1F4F6;color:var(--dim);font-weight:500}
+  .cnt{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #EDF0F3}
+  .tag{width:44px;height:34px;border-radius:6px;display:grid;place-items:center;font-weight:700;font-size:.9rem;flex:0 0 auto;border:1px solid}
+  .tag.a1{background:#EDF3FA;border-color:#B9D0E8;color:var(--blue)}
+  .tag.a2{background:#F1F4F6;border-color:var(--edge);color:var(--dim)}
+  .tag.b{background:var(--amber-bg);border-color:#E8C98C;color:#8A5A06}
+  .cnt .pc{flex:1;font-size:.8rem;color:var(--dim)}
+  .cnt .v{width:52px;text-align:center;font-size:1.35rem;font-weight:700}
+  .step{width:44px;height:40px;border:1px solid var(--edge);border-radius:8px;font-size:1.3rem;color:var(--blue);background:#fff;display:grid;place-items:center;flex:0 0 auto}
+  .step:active{background:#EDF3FA}
+  label{display:block;margin-bottom:12px}
+  label span{display:block;font-size:.8rem;color:var(--dim);margin-bottom:4px}
+  input,select{width:100%;padding:11px 12px;border:1px solid var(--edge);border-radius:8px;background:#FBFCFD;font-size:1rem}
+  input:focus,select:focus{border-color:var(--blue);background:#fff}
+  input[readonly]{background:#F1F4F6;color:var(--dim)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+  .hint{font-size:.78rem;color:var(--dim);margin:-6px 0 12px}
+  .hint.warn{color:#8A5A06;background:var(--amber-bg);padding:8px 10px;border-radius:6px;margin:-4px 0 12px}
+  details summary{padding:11px 14px;font-size:.8rem;font-weight:700;color:var(--dim);list-style:none}
+  details summary::-webkit-details-marker{display:none}
+  details summary::after{content:"+";float:right;font-size:1.1rem;color:var(--blue)}
+  details[open] summary::after{content:"–"}
+  .log{font-size:.85rem;color:var(--dim);padding:6px 0;border-bottom:1px solid #EDF0F3;display:flex;justify-content:space-between}
+  .mcard{border-bottom:1px solid #EDF0F3;padding:12px 14px}
+  .mcard:last-child{border-bottom:0}
+  .mhead{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+  .mhead b{font-size:.95rem;flex:1}
+  .mhead em{font-style:normal;font-size:.76rem;color:var(--dim);text-align:right}
+  .three{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .gcol{text-align:center}
+  .gcol .tag{width:100%;margin-bottom:6px}
+  .gcol input{text-align:center;padding:10px 4px;font-weight:650}
+  .foot{text-align:center;font-size:.75rem;color:var(--dim);padding:4px 0 10px}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);z-index:80;background:var(--ink);color:#fff;
+    padding:11px 18px;border-radius:22px;font-size:.88rem;opacity:0;pointer-events:none;transition:.2s;max-width:88vw;text-align:center}
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+  @media (prefers-reduced-motion:reduce){*{transition:none !important}}
+</style>
+</head>
+<body>
+<div class="bar">
+  <button class="burger" id="open" aria-label="Menu"><span></span></button>
+  <div class="ttl"><b id="hLine"></b><small id="hSub"></small></div>
+  <div class="lang"><button data-l="pl" aria-pressed="true">PL</button><button data-l="en" aria-pressed="false">EN</button></div>
+</div>
+<div class="scrim" id="scrim"></div>
+<nav class="drawer" id="drawer"><header><b>Ekstruzja</b><span id="dSub"></span></header><div class="dlist" id="dlist"></div></nav>
+
+<main>
+<div id="viewLine">
+  <section>
+    <h2 id="t_lnHead"></h2>
+    <div class="pad">
+      <div class="two">
+        <label><span id="t_onr"></span><input id="oNr" inputmode="numeric" placeholder="872600213"></label>
+        <label><span id="t_olot"></span><input id="oLot" placeholder="E1007P"></label>
+      </div>
+      <label style="margin-bottom:6px"><span id="t_ospd"></span>
+        <input id="oSpd" type="number" inputmode="decimal" min="0" placeholder="2052"></label>
+      <div class="hint" id="spdNote"></div>
+      <button class="btn ghost" id="btnScan" style="margin-top:4px"></button>
+      <input id="scanFile" type="file" accept="image/*" capture="environment" hidden>
+      <div class="hint" id="scanNote" style="margin:8px 0 0"></div>
+    </div>
+  </section>
+
+  <section class="doff" id="doffCard">
+    <h2 id="t_doff"></h2>
+    <div class="status"><i class="dot" id="dot"></i><b id="stText"></b></div>
+    <div id="stBtns" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 14px 12px">
+      <button class="tgl" id="btnOdpad"></button>
+      <button class="tgl" id="btnAwaria"></button>
+      <button class="tgl" id="btnStop"></button>
+      <button class="tgl" id="btnProba"></button>
+      <button class="tgl back" id="btnResume" style="grid-column:1/-1" hidden></button>
+      <button class="tgl" id="btnStart" style="grid-column:1/-1"></button>
+    </div>
+    <div class="pad">
+      <div class="clock num" id="cd">--:--:--</div>
+      <div class="sub num" id="doffInfo">&nbsp;</div>
+      <div class="flag n" id="obcFlag" hidden></div>
+      <div class="flag n" id="palNextFlag" hidden></div>
+      <button class="btn" id="btnDoff"></button>
+      <div class="rows" style="margin-top:12px">
+        <div id="t_obc"></div><div class="num" id="vObc">–</div>
+        <div id="t_nwDoff"></div><div class="num" id="vNwDoff">–</div>
+        <div id="t_cycTh"></div><div class="num" id="vCycTh">–</div>
+        <div id="t_cycRe"></div><div class="num" id="vCycRe">–</div>
+        <div id="t_dwDoff"></div><div class="num" id="vDwDoff">–</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2 id="t_zryw"></h2>
+    <div class="pad">
+      <div class="cnt" id="launchRow"><div class="pc" id="t_launched"></div>
+        <button class="step" id="lMinus" aria-label="-1">−</button>
+        <div class="v num" id="vLaunchSet">8</div>
+        <button class="step" id="lPlus" aria-label="+1">+</button></div>
+      <div class="hint" id="launchNote"></div>
+      <div class="cnt"><div class="pc" id="t_zrywNow"></div>
+        <button class="step" id="zMinus" aria-label="-1">−</button>
+        <div class="v num" id="vZryw">0</div>
+        <button class="step" id="zPlus" aria-label="+1">+</button></div>
+      <div class="cnt" style="border-bottom:0"><div class="pc" id="t_wlokNow"></div>
+        <button class="step" id="wMinus" aria-label="-1">−</button>
+        <div class="v num" id="vWlok">0</div>
+        <button class="step" id="wPlus" aria-label="+1">+</button></div>
+      <div class="rows">
+        <div id="t_launchedRow"></div><div class="num" id="vLaunched">–</div>
+        <div id="t_windPos"></div><div class="num" id="vWindPos">–</div>
+        <div id="t_zrywCycle"></div><div class="num" id="vZrywCycle">0</div>
+        <div id="t_effPos"></div><div class="num" id="vEffPos">–</div>
+        <div id="t_zrywShift"></div><div class="num" id="vZrywShift">0</div>
+        <div id="t_wlokShift"></div><div class="num" id="vWlokShift">0</div>
+      </div>
+      <div class="flag n" id="zrywFlag" hidden></div>
+      <div class="hint" id="gradeNote"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2 id="t_out"></h2>
+    <div class="pad">
+      <div class="rows">
+        <div id="t_feed"></div><div class="num" id="vFeed">–</div>
+        <div id="t_wind"></div><div class="num" id="vWind">–</div>
+        <div id="t_lossR"></div><div class="num" id="vLossR">–</div>
+        <div id="t_wound"></div><div class="num big" id="vWound">–</div>
+        <div id="t_lost"></div><div class="num" id="vLost">–</div>
+        <div id="t_spr"></div><div class="num" id="vSpr">–</div>
+        <div id="t_kghr"></div><div class="num" id="vKghR">–</div>
+        <div id="t_kgshift"></div><div class="num" id="vKgShift">–</div>
+        <div id="t_nwshift"></div><div class="num" id="vNwShift">–</div>
+        <div id="t_odpShift"></div><div class="num" id="vOdpShift">–</div>
+        <div id="t_dwShift"></div><div class="num" id="vDwShift">–</div>
+        <div id="t_avail"></div><div class="num" id="vAvail">–</div>
+      </div>
+      <div class="prog"><i id="pShift" style="width:0"></i></div>
+      <div class="sub num" id="shiftInfo">&nbsp;</div>
+      <div class="flag n" id="lossFlag" hidden></div>
+      <div id="evBox"></div>
+      <div class="hint" id="odpNote" style="margin:10px 0 0"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2 id="t_hand"></h2>
+    <div class="pad">
+      <div class="rows">
+        <div id="t_hA1"></div><div class="num" id="vHA1">–</div>
+        <div id="t_hBw"></div><div class="num" id="vHBw">–</div>
+        <div id="t_hBz"></div><div class="num" id="vHBz">–</div>
+        <div id="t_handNorm"></div><div class="num" id="vHandNorm">–</div>
+        <div id="t_kgNow"></div><div class="num" id="vKgNow">–</div>
+        <div id="t_doffLeft"></div><div class="num" id="vDoffLeft">–</div>
+        <div id="t_nwLeft"></div><div class="num" id="vNwLeft">–</div>
+      </div>
+      <label style="margin:12px 0 0"><span id="t_zrywKg"></span>
+        <input id="zrywKg" type="number" inputmode="decimal" min="0" step="0.1"></label>
+      <div class="rows"><div id="t_kgEnd"></div><div class="num big" id="vKgEnd">–</div></div>
+      <div class="hint" id="handNote"></div>
+    </div>
+  </section>
+
+  <section id="doffPanel" hidden>
+    <h2 id="t_dpT"></h2>
+    <div class="pad">
+      <div class="cnt"><div class="tag a1">A1</div><div class="pc" id="t_dpA1"></div>
+        <div class="v num" id="dpA1" style="width:auto;padding-right:8px">0</div></div>
+      <div class="cnt"><div class="tag a2">A2</div><div class="pc" id="t_dpA2"></div>
+        <button class="step" data-dp="a2" data-v="-1">−</button><div class="v num" id="dpA2">0</div>
+        <button class="step" data-dp="a2" data-v="1">+</button></div>
+      <label style="margin:8px 0 10px"><span id="t_dpA2kg"></span>
+        <input id="dpA2kg" type="number" inputmode="decimal" min="0" step="0.1"></label>
+      <div class="cnt"><div class="tag b">B</div><div class="pc" id="t_dpZryw"></div>
+        <button class="step" data-dp="zryw" data-v="-1">−</button><div class="v num" id="dpZryw">0</div>
+        <button class="step" data-dp="zryw" data-v="1">+</button></div>
+      <label style="margin:8px 0 10px"><span id="t_dpZrywKg"></span>
+        <input id="dpZrywKg" type="number" inputmode="decimal" min="0" step="0.1"></label>
+      <div class="cnt"><div class="tag b">B</div><div class="pc" id="t_dpWlok"></div>
+        <button class="step" data-dp="wlok" data-v="-1">−</button><div class="v num" id="dpWlok">0</div>
+        <button class="step" data-dp="wlok" data-v="1">+</button></div>
+      <label style="margin:8px 0 10px"><span id="t_dpWlokKg"></span>
+        <input id="dpWlokKg" type="number" inputmode="decimal" min="0" step="0.1"></label>
+      <div class="flag n" id="dpCheck"></div>
+      <button class="btn" id="dpSave"></button>
+      <button class="btn ghost" id="dpCancel" style="margin-top:8px"></button>
+    </div>
+  </section>
+
+  <section>
+    <h2 id="t_pack"></h2>
+    <div class="pad">
+      <div class="rows">
+        <div id="t_shA1"></div><div class="num" id="vShA1">–</div>
+        <div id="t_shA2"></div><div class="num" id="vShA2">–</div>
+        <div id="t_shB"></div><div class="num" id="vShB">–</div>
+        <div id="t_shBwhy"></div><div class="num" id="vShBwhy">–</div>
+        <div id="t_utyl"></div><div class="num" id="vUtyl">–</div>
+        <div id="t_sum"></div><div class="num big" id="vSum">0</div>
+        <div id="t_kgsum"></div><div class="num" id="vKgSum">0 kg</div>
+      </div>
+      <div class="hint" id="packNote"></div>
+      <button class="btn ghost" id="btnReset"></button>
+    </div>
+  </section>
+
+  <section>
+    <h2 id="t_ord"></h2>
+    <div class="pad">
+      <label><span id="t_oidx"></span><input id="oIdx" placeholder="POY-PP-…"></label>
+      <div class="two">
+        <label><span id="t_okg"></span><input id="oKg" type="number" inputmode="decimal" min="0" placeholder="1600"></label>
+        <label><span id="t_okgh"></span><input id="oKgh" type="number" inputmode="decimal" min="0" placeholder="17,7"></label>
+      </div>
+      <label id="pairBox" hidden><span id="t_pair"></span>
+        <select id="oPair"><option value="1"></option><option value="0"></option></select></label>
+      <div class="hint" id="pairNote"></div>
+      <label><span id="t_odl"></span><input id="oDl" type="datetime-local"></label>
+      <div class="rows" style="margin-bottom:10px">
+        <div id="t_opack"></div><div class="num big" id="vPackKg">0 kg</div>
+        <div id="t_oun"></div><div class="num" id="vUnp">–</div>
+      </div>
+      <label style="margin-bottom:8px"><span id="t_packIn"></span>
+        <input id="packIn" type="number" inputmode="decimal" min="0" step="0.1" placeholder="126,0"></label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button class="tgl" id="btnPackAdd"></button>
+        <button class="tgl" id="btnPackSet"></button>
+      </div>
+      <div class="hint" id="packHint" style="margin:10px 0 0"></div>
+      <div id="packLogBox"></div>
+      <button class="btn ghost" id="btnPackUndo" style="margin-top:8px"></button>
+      <div class="flag n" id="joint" hidden></div>
+      <div class="flag n" id="runFlag"></div>
+      <div class="prog amber"><i id="pOrd" style="width:0"></i></div>
+      <div class="rows">
+        <div id="t_omade"></div><div class="num" id="vMade">–</div>
+        <div id="t_oleft"></div><div class="num" id="vLeft">–</div>
+        <div id="t_oend"></div><div class="num big" id="vEnd">–</div>
+        <div id="t_osh"></div><div class="num" id="vSh">–</div>
+      </div>
+      <div class="flag n" id="margin"></div>
+      <div class="hint" id="srcNote"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2 id="t_notifT"></h2>
+    <div class="pad">
+      <button class="btn ghost" id="btnNotif" style="margin-top:0"></button>
+      <label style="margin:12px 0 0"><span id="t_notifLead"></span>
+        <select id="notifLead">
+          <option value="3">3 min</option><option value="5">5 min</option>
+          <option value="10">10 min</option><option value="15">15 min</option></select></label>
+      <div class="hint" id="notifNote" style="margin:10px 0 0"></div>
+    </div>
+  </section>
+
+  <section><details><summary id="t_set"></summary><div class="pad">
+    <div class="two">
+      <label><span id="t_pos"></span><input id="sPos" readonly></label>
+      <label><span id="t_palN"></span><input id="sPalN" readonly></label>
+      <label><span id="t_kgnet"></span><input id="sKg" type="number" inputmode="decimal" min="0.1" step="0.1"></label>
+      <label><span id="t_tube"></span><input id="sTube" type="number" inputmode="decimal" min="0" step="0.01"></label>
+      <label><span id="t_sh1"></span><select id="sShift"><option value="6">06:00</option><option value="7">07:00</option><option value="8">08:00</option><option value="5">05:00</option></select></label>
+      <label><span id="t_gross"></span><input id="sGross" readonly></label>
+    </div>
+    <div class="hint warn" id="t_kghint"></div>
+    <div id="logBox"></div>
+    <button class="btn ghost" id="btnClearLog" style="margin-top:12px"></button>
+    <button class="btn ghost" id="btnExport" style="margin-top:8px"></button>
+    <button class="btn ghost" id="btnImport" style="margin-top:8px"></button>
+  </div></details></section>
+</div>
+
+<div id="viewDoff" hidden>
+  <section>
+    <h2 id="t_schedT"></h2>
+    <div class="pad">
+      <div id="schedBox"></div>
+      <div class="hint" id="schedNote" style="margin:10px 0 0"></div>
+    </div>
+  </section>
+  <section><h2 id="t_firstT"></h2><div id="firstBox"></div></section>
+</div>
+
+<div id="viewHist" hidden>
+  <section>
+    <h2 id="t_histT"></h2>
+    <div class="pad">
+      <label><span id="t_histMonth"></span><select id="histMonth"></select></label>
+      <div class="rows" id="histTot"></div>
+      <button class="btn ghost" id="btnCsv" style="margin-top:12px"></button>
+      <button class="btn ghost" id="btnCsvAll" style="margin-top:8px"></button>
+      <div class="hint" id="histNote" style="margin:10px 0 0"></div>
+    </div>
+  </section>
+  <section><h2 id="t_histList"></h2><div id="histBox"></div></section>
+</div>
+
+<div id="viewStock" hidden>
+  <section>
+    <h2 id="t_labT"></h2>
+    <div class="pad">
+      <div class="status" style="padding:0 0 10px">
+        <i class="dot" id="labDot"></i><b id="labText"></b><button class="tgl" id="btnLab"></button>
+      </div>
+      <label style="margin:12px 0 0"><span id="t_labGrade"></span>
+        <select id="labGrade"><option value="a1">A1</option><option value="a2">A2</option><option value="b">B</option></select></label>
+      <div id="labRows"></div>
+    </div>
+  </section>
+  <section>
+    <h2 id="t_stockShift"></h2>
+    <div class="pad"><div class="rows" id="shiftTot"></div></div>
+  </section>
+  <section><h2 id="t_stockT"></h2><div id="stockBox"></div></section>
+  <section><h2 id="t_palT"></h2><div class="pad" id="palBox"></div></section>
+</div>
+<div class="foot" id="foot"></div>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const store=(()=>{let ok=true;try{localStorage.setItem("__t","1");localStorage.removeItem("__t");}catch(e){ok=false;}
+  const m={};return{get:k=>{try{return ok?localStorage.getItem(k):(m[k]??null);}catch(e){return m[k]??null;}},
+  set:(k,v)=>{try{ok?localStorage.setItem(k,v):(m[k]=v);}catch(e){m[k]=v;}}};})();
+
+/* pos = nawoje na podmianę (stałe), pal = norma palety */
+const LINES=[
+ {id:"pa_e1_n1", g:"PA",name:"PA E1 N1", pos:8,pal:42},
+ {id:"pa_e2_n2", g:"PA",name:"PA E2 N2", pos:8,pal:42},
+ {id:"pp_e1_n1a",g:"PP",name:"PP E1 N1A",pos:8,pal:42,pair:"pp_e1_n1b"},
+ {id:"pp_e1_n1b",g:"PP",name:"PP E1 N1B",pos:8,pal:42,pair:"pp_e1_n1a"},
+ {id:"pp_e2_n2", g:"PP",name:"PP E2 N2", pos:6,pal:35},
+ {id:"pp_e3_n3", g:"PP",name:"PP E3 N3", pos:6,pal:35}];
+const L_=id=>LINES.find(l=>l.id===id), POS=id=>L_(id).pos, PAL=id=>L_(id).pal;
+const G=["a1","a2","b"], GN={a1:"A1",a2:"A2",b:"B"};
+
+const mkG=()=>({a1:{n:0,kg:0},a2:{n:0,kg:0},b:{n:0,kg:0}});
+function migG(o,kgNet){const r=mkG();if(!o)return r;
+  G.forEach(g=>{const v=o[g];
+    if(typeof v==="number")r[g]={n:v,kg:v*kgNet};
+    else if(v&&typeof v==="object")r[g]={n:v.n||0,kg:v.kg||0};});
+  return r;}
+const gN=o=>G.reduce((a,g)=>a+o[g].n,0);
+const gKG=o=>G.reduce((a,g)=>a+o[g].kg,0);
+const DEF=()=>({cfg:{kgNet:3,kgTube:0.31,sh:6},
+  ord:{nr:"",lot:"",idx:"",kg:0,kgh:0,pairKgh:1,dl:"",pack:0,packKg:0,packLog:[]},
+  stock:mkG(),shift:mkG(),shB:{zryw:0,wlok:0},
+  zryw:0,zrywCycle:0,zrywKg:0,zrywShift:0,zrywPosMs:0,zrywSince:Date.now(),zrywPkg:[],
+  wlok:0,wlokShift:0,launched:0,labSet:null,
+  state:"run",stateSince:Date.now(),odpShift:0,events:[],
+  obciag:0,shiftDoffs:0,utyl:{n:0,kg:0},spd:0,firstDoff:0,
+  doffStart:Date.now(),log:[],dwDoff:0,dwShift:0,shKey:""});
+const SEED={
+ pp_e1_n1a:{spd:2052,ord:{nr:"872600213",lot:"E1007P",idx:"POY-PP-09048/1-SD-7030-LEG-N",kg:1600,kgh:17.7,pairKgh:1,dl:"2026-09-16T00:00",pack:0}},
+ pp_e1_n1b:{spd:2052,ord:{nr:"872600213",lot:"E1007P",idx:"POY-PP-09048/1-SD-7030-LEG-N",kg:1600,kgh:17.7,pairKgh:1,dl:"2026-09-16T00:00",pack:0}}};
+
+const T={pl:{
+ app:"Ekstruzja",pick:"Wybierz maszynę",vstock:"Magazyn i palety",day:"Zmiana dzienna",night:"Zmiana nocna",
+ doff:"Najbliższa podmiana",doffBtn:"Podmiana wykonana",at:"o {t}",late:"Opóźnienie {t}",doffOk:"Zapisano podmianę",
+ nwDoff:"Nawoje z tej podmiany",cycTh:"Cykl wg zlecenia",cycRe:"Cykl zmierzony",dwDoff:"Postój od podmiany",
+ run:"Produkcja",stopped:"Postój",stOdpad:"Odpad — przewlekanie",stAwaria:"Awaria — nitka w odpad",
+ stProba:"Próba — nowy asortyment",
+ btnOdpad:"Zryw → odpad",btnAwaria:"Awaria",btnStop:"Postój",btnProba:"Próba",
+ btnStart:"Start produkcji — nowe zlecenie",btnResume:"Maszyna puszczona — to samo zlecenie",
+ startAsk:"Start produkcji oznacza nowe zlecenie albo nowy typ nitki. Obciąg wraca na 0, a pierwszy obciąg pójdzie do utylizacji. Kontynuować?",
+ startOk:"Nowe zlecenie — obciąg 0",
+ windPos:"Pozycje nawijające",zrywCycle:"Zerwane w tym cyklu → B",
+ launched:"Puszczone pozycje (wyjątek)",launchedRow:"Puszczone pozycje",
+ launchNote:"Domyślnie wszystkie {p}. Zmniejsz, gdy pozycja w ogóle nie ruszyła albo zerwało ją zaraz po przewleczeniu i kręcisz dalej bez niej — nawój jest wtedy pusty. Gdy zerwało w trakcie i nawój ma już wagę, użyj licznika zrywów niżej.",
+ launchFlag:"Puszczono {n} z {p} — nitka z {d} poz. leci w odpad przez cały cykl",
+ stopSince:"od {t} · {d}",paused:"{s} — waga nawojów stoi",
+ lnHead:"Linia",ospd:"Prędkość nawijania (m/min)",
+ scan:"Zeskanuj kod z bloczka",scanOk:"Wczytano nr zlecenia {n}",
+ scanNone:"Nie znalazłem kodu na zdjęciu — spróbuj z bliska i przy dobrym świetle",
+ scanNo:"Ta przeglądarka nie czyta kodów kreskowych — wpisz numer ręcznie",
+ scanNote:"Aparat czyta kod kreskowy z bloczka i wpisuje numer zlecenia.",
+ spdNote:"Z prędkości i wydajności wychodzi {d} dtex, nawój ≈ {m} m — porównaj z bloczkiem",
+ obc:"Obciąg nr",obc0:"Obciąg 0 — nie liczy się jako produkcja, idzie do utylizacji",
+ probaFlag:"Próba — ten obciąg nie wchodzi do produkcji",
+ utyl:"Utylizacja na zmianie",utylOk:"Obciąg {n} szt do utylizacji",
+ zrywNote:"Po usunięciu zrywu naciśnij „Maszyna puszczona” — to samo zlecenie kręci dalej pełną liczbą pozycji",
+ odpShift:"Odpad na zmianie",odpKg:"Odpad w kg",
+ odpNote:"Przy przewlekaniu nitka ze wszystkich pozycji leci w odpad, więc waga nawojów nie rośnie. Naciśnij „Maszyna puszczona” dokładnie w chwili startu.",
+ evT:"Zdarzenia na zmianie",evRun:"Puszczona",evOdpad:"Odpad",evStop:"Postój",
+ zryw:"Zrywy i włókienka",zrywNow:"Zerwane pozycje teraz",wlokNow:"Włókienko teraz",
+ effPos:"Pozycje z pełną wagą",zrywShift:"Zrywy na zmianie",wlokShift:"Włókienka na zmianie",
+ zrywFlag:"Maszyna kręci {w} z {p} pozycji — nitka z {n} leci w odpad",zrywAll:"Wszystkie pozycje zerwane",
+ zrywCyc:"{n} nawojów z tego cyklu pójdzie na B",
+ wlokFlag:"Włókienko nie zmienia tempa — nawój idzie na B",
+ gradeNote:"A1 od {w} kg · A2 poniżej {w} kg · B zawsze przy zrywie albo włókienku, bez względu na wagę",
+ out:"Bilans kilogramów",feed:"Podaż z ekstrudera",wind:"Nawijane na nawoje",lossR:"Idzie w odpad",
+ wound:"Nawinięte na zmianie",lost:"Straty na zmianie",kghr:"kg/godz zmierzone",spr:"Sprawność",
+ kgshift:"Prognoza na zmianę",nwshift:"Nawoje na zmianę",dwShift:"Postój na zmianie",avail:"Dostępność",
+ lossFlag:"Stracone {k} kg nie liczą się do zlecenia — trzeba je domotać, czyli około {t} dłużej",
+ zrywFroze:"Waga zamrożona w chwili zrywu: {l}",
+ shiftLeft:"Do końca zmiany {t} · koniec {e}",
+ hand:"Przekazanie zmiany",kgNow:"Na maszynie teraz",kgEnd:"Zostaje następnej zmianie",
+ hA1:"Dokręcą się na A1",hBw:"Na B — włókienko",hBz:"Na B — zryw",
+ shiftCol:"z tej zmiany",stockShift:"Zdjęte na tej zmianie — wszystkie maszyny",
+ doffLeft:"Podmian do końca zmiany",nwLeft:"Nawojów do zdjęcia",
+ handNote:"Pozycje normalne liczone automatycznie, zerwane wpisujesz — razem tyle zostaje następnej zmianie.",
+ pack:"Zdjęte na tej zmianie",sum:"Razem",kgsum:"Masa netto",
+ shA1:"A1",shA2:"A2",shB:"B",
+ packNote:"Dolicza się samo przy każdej podmianie i wchodzi do magazynu.",
+ dpT:"Zapis podmiany",dpA1:"od {w} kg — reszta pozycji",dpA2:"poniżej {w} kg, bez wad",
+ dpZryw:"Zryw — zawsze B",dpWlok:"Włókienko — zawsze B",
+ dpA2kg:"A2 — razem kg",dpZrywKg:"Zrywy — razem kg",dpWlokKg:"Włókienka — razem kg",
+ shBwhy:"w tym zryw / włókienko",
+ dpOk:"Razem {n} z {p} pozycji",dpBad:"Razem {n}, a pozycji jest {p}",
+ dpSave:"Zapisz podmianę",dpCancel:"Anuluj",dpDone:"Dopisano {n} szt do magazynu",
+ handNorm:"Pozycje normalne",zrywKg:"kg na zerwanych pozycjach (wpisz ręcznie)",
+ reset:"Wyzeruj licznik zmiany",resetAsk:"Wyzerować A1 / A2 / B?",resetOk:"Wyzerowano",
+ ord:"Zlecenie",onr:"Nr zlecenia",olot:"Lot WG",oidx:"Indeks",okg:"Ilość końcowa (kg)",okgh:"Wydajność (kg/godz)",
+ odl:"Data końca zlecenia",opack:"Spakowane w zleceniu",oun:"Niespakowane (magazyn)",
+ packIn:"Waga palety albo łączna waga (kg)",packAdd:"+ Dodaj paletę",packSet:"= Ustaw łącznie",
+ packUndo:"Cofnij ostatni wpis",packAddOk:"Dodano {k} kg",packSetOk:"Ustawiono {k} kg",
+ packUndoOk:"Cofnięto {k} kg",packNothing:"Nie ma czego cofać",packBad:"Wpisz wagę",
+ packNote:"Po wolnych dniach wpisz łączną wagę spakowanych palet i naciśnij „Ustaw łącznie” — nie trzeba liczyć, ile palet doszło. „Dodaj paletę” dokłada jedną do sumy. Przy zleceniu wspólnym liczy się suma z obu nawijarek.",
+ packPcs:"≈ {n} szt",packLogT:"Ostatnie wpisy",packSetTag:"łącznie",packAddTag:"paleta",
+ omade:"Wykonane",oleft:"Pozostało",oend:"Prognozowany koniec",osh:"Pozostało zmian",ordDone:"Zlecenie wykonane",
+ pair:"Wydajność z bloczka dotyczy",pairBoth:"N1A + N1B razem",pairOne:"tylko tej nawijarki",
+ pairNote:"Na tę nawijarkę: {k} kg/godz · podmiana co {c}",
+ joint:"Zlecenie wspólne: {l}",runFlag:"W ruchu: {l}",allStop:"Wszystkie maszyny zlecenia stoją",
+ marginOk:"Zapas do terminu: {t}",marginBad:"Przekroczenie terminu o {t}",marginNo:"Wpisz termin i wydajność",
+ srcRe:"Prognoza wg {n} zmierzonych podmian",srcZl:"Prognoza wg zlecenia — bez przestojów",
+ set:"Ustawienia maszyny",pos:"Nawoje na podmianę",palN:"Norma palety",kgnet:"Masa nawoju netto (kg)",
+ tube:"Waga cewki (kg)",sh1:"Start zmiany dziennej",gross:"Nawój brutto (kg)",
+ kghint:"Masa nawoju zmienia się razem z artykułem — sprawdzaj przy każdym nowym zleceniu.",
+ logT:"Ostatnie podmiany",clearLog:"Wyczyść historię podmian",logAsk:"Usunąć historię podmian?",
+ exp:"Eksport danych",imp:"Import danych",copied:"Skopiowano do schowka",
+ impAsk:"Wklej wyeksportowane dane:",impOk:"Wczytano",impBad:"Nieprawidłowe dane",nd:"brak danych",d:"d",
+ doffTab:"Podmiany",schedT:"Harmonogram zmiany",firstT:"Pierwsza podmiana na zmianie",
+ schedNote:"Każda nawijarka liczy się osobno. E1 podaje nitkę do N1A i N1B, ale nawijają niezależnie — zryw na jednej nie zatrzymuje drugiej, więc godziny podmian się rozjeżdżają.",
+ schedEmpty:"Brak maszyn w produkcji",firstSet:"Ustaw",cyc:"cykl",
+ firstOk:"{l} — podmiana o {t}",nextIs:"Następna",thenIs:"kolejne",collide:"razem z",
+ hist:"Raporty zmian",histT:"Raporty zmian",histMonth:"Miesiąc",histList:"Zmiany",
+ histNote:"Każda zmiana zapisuje się sama przy zmianie warty. Archiwum trzyma 13 miesięcy.",
+ histEmpty:"Brak zapisanych zmian w tym miesiącu",
+ csv:"Eksport CSV — ten miesiąc",csvAll:"Eksport CSV — całe archiwum",
+ csvOk:"Plik {f} pobrany",csvNone:"Nie ma czego eksportować",
+ hDay:"dzienna",hNight:"nocna",hObc:"obciągi",hStr:"straty",
+ notifT:"Powiadomienia",notifOn:"Włącz powiadomienia",notifOff:"Wyłącz powiadomienia",
+ notifLead:"Ile minut przed podmianą",notifOkMsg:"Powiadomienia włączone",
+ notifDenied:"Telefon zablokował powiadomienia — odblokuj je dla tej aplikacji w ustawieniach systemu",
+ notifNote:"Alarm działa, gdy aplikacja jest otwarta albo wisi w tle. Przy zgaszonym ekranie i zamkniętej aplikacji Android potrafi ją uśpić — wtedy nie zadzwoni. Dotyczy wszystkich maszyn naraz.",
+ nDoff:"{l} — podmiana za {m} min",nPal:"Po tej podmianie paleta {g}: {n} z {norm}",
+ palNext:"Następna podmiana domyka paletę {g} — będzie {n} z {norm}",
+ labT:"Obciąg do laboratorium",labYes:"Dziś oddajecie obciąg",labNo:"Dziś bez obciągu",
+ labOnB:"Oddaj obciąg",labOffB:"Odwołaj obciąg",labGrade:"Gatunek na badanie",
+ labAuto:"Noce niedziela–czwartek; w piątek i sobotę laboratorium nie odbiera rano",
+ stockT:"Nawoje niespakowane",palT:"Palety",
+ actPack:"Spakuj paletę — {n}: {v} z {norm}",
+ actMerge:"Złóż na paletę u {n} — razem {v} z {norm}",
+ actShort:"Brakuje {x} szt do palety — razem {v} z {norm}",
+ actNone:"Za mało na paletę",afterLab:"po obciągu",total:"Razem"},
+ en:{
+ app:"Extrusion",pick:"Select a machine",vstock:"Stock and pallets",day:"Day shift",night:"Night shift",
+ doff:"Next doffing",doffBtn:"Doffing done",at:"at {t}",late:"Overdue by {t}",doffOk:"Doffing logged",
+ nwDoff:"Packages from this doffing",cycTh:"Cycle per order sheet",cycRe:"Measured cycle",dwDoff:"Downtime since doffing",
+ run:"Production",stopped:"Stopped",stOdpad:"Waste — re-threading",stAwaria:"Breakdown — yarn to waste",
+ stProba:"Trial — new article",
+ btnOdpad:"Break → waste",btnAwaria:"Breakdown",btnStop:"Stop",btnProba:"Trial",
+ btnStart:"Start production — new order",btnResume:"Machine started — same order",
+ startAsk:"Start production means a new order or a new yarn type. The load counter returns to 0 and the first load will be scrapped. Continue?",
+ startOk:"New order — load 0",
+ windPos:"Positions winding",zrywCycle:"Broken this cycle → B",
+ launched:"Positions started (exception)",launchedRow:"Positions started",
+ launchNote:"All {p} by default. Lower it when a position never started, or broke right after threading and you carry on without it — that package is empty. If it broke mid-cycle and the package already has weight, use the break counter below.",
+ launchFlag:"{n} of {p} started — yarn from {d} pos. goes to waste for the whole cycle",
+ stopSince:"since {t} · {d}",paused:"{s} — package weight on hold",
+ lnHead:"Line",ospd:"Winding speed (m/min)",
+ scan:"Scan the code on the order sheet",scanOk:"Order number {n} loaded",
+ scanNone:"No code found in the photo — try closer and in good light",
+ scanNo:"This browser cannot read barcodes — type the number by hand",
+ scanNote:"The camera reads the barcode on the order sheet and fills in the order number.",
+ spdNote:"Speed and output imply {d} dtex, package ≈ {m} m — compare with the order sheet",
+ obc:"Load no.",obc0:"Load 0 — not counted as production, it gets scrapped",
+ probaFlag:"Trial — this load does not go into production",
+ utyl:"Scrapped this shift",utylOk:"{n} pcs scrapped",
+ zrywNote:"Once the break is fixed press \u201eMachine started\u201d — the same order carries on with all positions",
+ odpShift:"Waste time this shift",odpKg:"Waste in kg",
+ odpNote:"While re-threading, yarn from every position goes to waste, so package weight does not grow. Press \u201eMachine started\u201d at the exact moment of restart.",
+ evT:"Events this shift",evRun:"Started",evOdpad:"Waste",evStop:"Stopped",
+ zryw:"Breaks and filament faults",zrywNow:"Broken positions now",wlokNow:"Filament fault now",
+ effPos:"Positions at full weight",zrywShift:"Breaks this shift",wlokShift:"Filament faults this shift",
+ zrywFlag:"Machine runs {w} of {p} positions — yarn from {n} goes to waste",zrywAll:"All positions broken",
+ zrywCyc:"{n} packages from this cycle will go to B",
+ wlokFlag:"A filament fault does not change the rate — the package still goes to B",
+ gradeNote:"A1 from {w} kg · A2 below {w} kg · B always on a break or a filament fault, whatever it weighs",
+ out:"Kilogram balance",feed:"Fed by the extruder",wind:"Wound onto packages",lossR:"Going to waste",
+ wound:"Wound this shift",lost:"Lost this shift",kghr:"kg/h measured",spr:"Efficiency",
+ kgshift:"Shift forecast",nwshift:"Packages per shift",dwShift:"Downtime this shift",avail:"Availability",
+ lossFlag:"The {k} kg lost do not count towards the order — they must be wound again, about {t} longer",
+ zrywFroze:"Weight frozen at the moment of the break: {l}",
+ shiftLeft:"Shift ends in {t} · at {e}",
+ hand:"Shift handover",kgNow:"On the machine now",kgEnd:"Left for the next shift",
+ hA1:"Will finish as A1",hBw:"To B — filament fault",hBz:"To B — break",
+ shiftCol:"this shift",stockShift:"Taken off this shift — all machines",
+ doffLeft:"Doffings before shift end",nwLeft:"Packages still to take off",
+ handNote:"Normal positions are calculated, broken ones you enter — that is what the next shift takes over.",
+ pack:"Taken off this shift",sum:"Total",kgsum:"Net weight",
+ shA1:"A1",shA2:"A2",shB:"B",
+ packNote:"Added automatically at every doffing and carried into stock.",
+ dpT:"Record the doffing",dpA1:"from {w} kg — remaining positions",dpA2:"below {w} kg, no faults",
+ dpZryw:"Break — always B",dpWlok:"Filament fault — always B",
+ dpA2kg:"A2 — total kg",dpZrywKg:"Breaks — total kg",dpWlokKg:"Filament faults — total kg",
+ shBwhy:"of that break / filament",
+ dpOk:"{n} of {p} positions",dpBad:"{n} entered, but there are {p} positions",
+ dpSave:"Save the doffing",dpCancel:"Cancel",dpDone:"{n} pcs added to stock",
+ handNorm:"Positions running normally",zrywKg:"kg on broken positions (enter by hand)",
+ reset:"Clear shift counter",resetAsk:"Clear A1 / A2 / B?",resetOk:"Cleared",
+ ord:"Order",onr:"Order no.",olot:"Lot WG",oidx:"Index",okg:"Final quantity (kg)",okgh:"Output (kg/h)",
+ odl:"Order due date",opack:"Packed on this order",oun:"Unpacked (stock)",
+ packIn:"Pallet weight or total weight (kg)",packAdd:"+ Add a pallet",packSet:"= Set total",
+ packUndo:"Undo the last entry",packAddOk:"{k} kg added",packSetOk:"Total set to {k} kg",
+ packUndoOk:"{k} kg undone",packNothing:"Nothing to undo",packBad:"Enter a weight",
+ packNote:"After days off, enter the total weight of packed pallets and press \u201eSet total\u201d — no need to work out how many pallets were added. \u201eAdd a pallet\u201d adds one to the running total. On a shared order the sum of both winders counts.",
+ packPcs:"\u2248 {n} pcs",packLogT:"Recent entries",packSetTag:"total",packAddTag:"pallet",
+ omade:"Produced",oleft:"Remaining",oend:"Forecast finish",osh:"Shifts remaining",ordDone:"Order complete",
+ pair:"Order sheet output covers",pairBoth:"N1A + N1B together",pairOne:"this winder only",
+ pairNote:"This winder: {k} kg/h · doffing every {c}",
+ joint:"Shared order: {l}",runFlag:"Running: {l}",allStop:"All machines on this order are stopped",
+ marginOk:"Margin before due date: {t}",marginBad:"Past due date by {t}",marginNo:"Enter due date and output",
+ srcRe:"Forecast from {n} measured doffings",srcZl:"Forecast per order sheet — no downtime",
+ set:"Machine settings",pos:"Packages per doffing",palN:"Pallet size",kgnet:"Package net weight (kg)",
+ tube:"Tube weight (kg)",sh1:"Day shift starts",gross:"Gross package (kg)",
+ kghint:"Package weight changes with the article — check it on every new order.",
+ logT:"Recent doffings",clearLog:"Clear doffing history",logAsk:"Delete doffing history?",
+ exp:"Export data",imp:"Import data",copied:"Copied to clipboard",
+ impAsk:"Paste exported data:",impOk:"Loaded",impBad:"Invalid data",nd:"no data",d:"d",
+ doffTab:"Doffings",schedT:"Shift timetable",firstT:"First doffing of the shift",
+ schedNote:"Each winder counts separately. E1 feeds both N1A and N1B, but they wind independently — a break on one does not stop the other, so their doffing times drift apart.",
+ schedEmpty:"No machines in production",firstSet:"Set",cyc:"cycle",
+ firstOk:"{l} — doffing at {t}",nextIs:"Next",thenIs:"then",collide:"together with",
+ hist:"Shift reports",histT:"Shift reports",histMonth:"Month",histList:"Shifts",
+ histNote:"Every shift is filed automatically at handover. The archive keeps 13 months.",
+ histEmpty:"No shifts recorded this month",
+ csv:"Export CSV — this month",csvAll:"Export CSV — whole archive",
+ csvOk:"{f} downloaded",csvNone:"Nothing to export",
+ hDay:"day",hNight:"night",hObc:"loads",hStr:"lost",
+ notifT:"Notifications",notifOn:"Turn notifications on",notifOff:"Turn notifications off",
+ notifLead:"Minutes before doffing",notifOkMsg:"Notifications on",
+ notifDenied:"The phone blocked notifications — allow them for this app in system settings",
+ notifNote:"The alert works while the app is open or sitting in the background. With the screen off and the app closed Android may suspend it, and then it will not ring. Covers all machines at once.",
+ nDoff:"{l} — doffing in {m} min",nPal:"After this doffing pallet {g}: {n} of {norm}",
+ palNext:"The next doffing completes pallet {g} — {n} of {norm}",
+ labT:"Lab sample",labYes:"Sample goes to the lab tonight",labNo:"No sample tonight",
+ labOnB:"Send a sample",labOffB:"Cancel the sample",labGrade:"Grade for testing",
+ labAuto:"Sunday–Thursday nights; the lab takes nothing on Saturday or Sunday morning",
+ stockT:"Unpacked packages",palT:"Pallets",
+ actPack:"Pack a pallet — {n}: {v} of {norm}",
+ actMerge:"Build the pallet at {n} — {v} of {norm} together",
+ actShort:"{x} pcs short of a pallet — {v} of {norm} together",
+ actNone:"Not enough for a pallet",afterLab:"after the sample",total:"Total"}};
+
+let lang=store.get("ex3_lang")||"pl", cur=store.get("ex3_line")||"pp_e1_n1a", view="line", db={};
+let LABG=store.get("ex3_labg")||"a1";
+try{db=JSON.parse(store.get("ex3_db")||"{}");}catch(e){db={};}
+LINES.forEach(l=>{const d=DEF(),s=SEED[l.id]||{},o=db[l.id]||{};
+  const kn=(o.cfg&&o.cfg.kgNet)||d.cfg.kgNet;
+  const oo={...d.ord,...(s.ord||{}),...(o.ord||{})};
+  if(!oo.packKg&&oo.pack)oo.packKg=oo.pack*((o.cfg&&o.cfg.kgNet)||d.cfg.kgNet); /* migracja ze sztuk */
+  if(!Array.isArray(oo.packLog))oo.packLog=[];
+  db[l.id]={...d,...s,...o,cfg:{...d.cfg,...(o.cfg||{})},ord:oo,
+    stock:migG(o.stock,kn),shift:migG(o.shift||o.cnt,kn),
+    shB:{zryw:0,wlok:0,...(o.shB||{})},log:o.log||[],events:o.events||[],
+    state:o.state||(o.stopAt?"stop":"run"),stateSince:o.stateSince||o.stopAt||Date.now(),
+    obciag:o.obciag||0,utyl:{n:0,kg:0,...(o.utyl||{})},spd:o.spd||(s.spd||0),
+    zrywCycle:o.zrywCycle||0,zrywPosMs:o.zrywPosMs||0,zrywSince:o.zrywSince||Date.now(),
+    zrywPkg:o.zrywPkg||[],launched:o.launched||l.pos,shiftDoffs:o.shiftDoffs||0,
+    firstDoff:o.firstDoff||0};});
+
+const t=(k,p)=>{let s=T[lang][k]||k;if(p)for(const n in p)s=s.split("{"+n+"}").join(p[n]);return s;};
+const save=()=>store.set("ex3_db",JSON.stringify(db));
+const $=i=>document.getElementById(i), S=()=>db[cur];
+const HOUR=3600000, SHIFT_H=12;
+
+/* ---------- archiwum raportów zmianowych ----------
+   Trzymane w osobnych kluczach po miesiącach, żeby zapis jednej zmiany nie przepisywał
+   całego roku. Starsze niż 13 miesięcy kasujemy przy każdym przewinięciu zmiany. */
+const HK=ym=>"ex3_h_"+ym;
+const ymOf=ts=>{const d=new Date(ts);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");};
+function histLoad(ym){try{return JSON.parse(store.get(HK(ym))||"[]");}catch(e){return[];}}
+function histSave(ym,a){try{store.set(HK(ym),JSON.stringify(a));return true;}catch(e){return false;}}
+function histMonths(){const out=[];const now=new Date();
+  for(let i=0;i<14;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    const ym=ymOf(d.getTime());if(histLoad(ym).length)out.push(ym);}
+  return out;}
+function histPrune(){const cut=new Date();cut.setMonth(cut.getMonth()-13);
+  for(let i=14;i<40;i++){const d=new Date(cut.getFullYear(),cut.getMonth()-(i-13),1);
+    const k=HK(ymOf(d.getTime()));if(store.get(k))store.set(k,"[]");}}
+function histPush(rec){const ym=ymOf(rec.t),a=histLoad(ym);
+  if(a.some(x=>x.t===rec.t&&x.m===rec.m))return;      /* bez duplikatów */
+  a.push(rec);histSave(ym,a);}
+
+/* zamknięcie zmiany: zapisujemy to, co faktycznie zdjęto, a nie prognozy */
+function closeShift(id){const d=db[id],start=parseInt(d.shKey,10);
+  if(!start||isNaN(start))return;
+  const tally=gN(d.shift)+d.utyl.n+d.zrywShift+d.wlokShift+(d.dwShift||0)+(d.odpShift||0);
+  if(!tally)return;                                    /* pusta zmiana — nie zaśmiecamy */
+  const straty=kghOne(id)*(d.odpShift||0)/HOUR+perPos(id)*(d.zrywPosMs||0)/HOUR;
+  histPush({t:start,n:new Date(start).getHours()===((d.cfg.sh+12)%24)?1:0,
+    m:id,o:d.ord.nr||"",lot:d.ord.lot||"",ob:d.shiftDoffs||0,
+    a1:[d.shift.a1.n,+d.shift.a1.kg.toFixed(2)],
+    a2:[d.shift.a2.n,+d.shift.a2.kg.toFixed(2)],
+    b:[d.shift.b.n,+d.shift.b.kg.toFixed(2)],
+    u:[d.utyl.n,+d.utyl.kg.toFixed(2)],
+    z:d.zrywShift||0,w:d.wlokShift||0,
+    odp:Math.round((d.odpShift||0)/60000),
+    stp:Math.round(Math.max(0,(d.dwShift||0)-(d.odpShift||0))/60000),
+    str:+straty.toFixed(2)});}
+
+/* ---------- shifts ---------- */
+function bounds(id,now){const d=db[id],a=d.cfg.sh,b=(a+12)%24,x=new Date(now),o=[];
+  for(let k=-1;k<=1;k++)for(const h of[a,b])o.push(new Date(x.getFullYear(),x.getMonth(),x.getDate()+k,h,0,0,0).getTime());
+  o.sort((p,q)=>p-q);let st=o[0];for(const v of o)if(v<=now)st=v;
+  return{start:st,end:st+SHIFT_H*HOUR,night:new Date(st).getHours()===b};}
+function rollShift(){const now=Date.now();
+  LINES.forEach(l=>{const d=db[l.id],sb=bounds(l.id,now),key=String(sb.start);
+    if(d.shKey!==key){
+      if(d.shKey)closeShift(l.id);                     /* archiwum przed zerowaniem */
+      d.shKey=key;d.dwShift=0;d.odpShift=0;d.zrywShift=0;d.wlokShift=0;d.shiftDoffs=0;d.firstDoff=0;
+      d.labSet=null;d.shift=mkG();d.shB={zryw:0,wlok:0};d.events=[];d.utyl={n:0,kg:0};
+      d.zrywPosMs=0;d.zrywSince=now;}});
+  if(Math.random()<0.05)histPrune();}
+/* obciąg trafia do laboratorium rano po nocce, a lab nie pracuje w sobotę i niedzielę,
+   więc oddajemy w noce zaczynające się w niedzielę, poniedziałek, wtorek, środę i czwartek */
+function labAuto(id){const sb=bounds(id,Date.now());if(!sb.night)return false;
+  const w=new Date(sb.start).getDay();return w<=4;}
+const labOn=id=>db[id].labSet===null?labAuto(id):!!db[id].labSet;
+
+/* ---------- rates ---------- */
+function kghOne(id){const o=db[id].ord,k=o.kgh||0;return(L_(id).pair&&o.pairKgh)?k/2:k;}
+/* Dwa różne liczniki, bo to dwie różne rzeczy:
+   zryw       — pozycje, które TERAZ nie nawijają; maszyna kręci np. 7 z 8, ich nitka leci w odpad.
+   zrywCycle  — pozycje, które w tym cyklu miały zryw; po przewleczeniu znów nawijają,
+                ale ich nawoje są lżejsze i idą na B przy najbliższej podmianie. */
+/* launched — ile pozycji faktycznie ruszyło po przewleczeniu; zwykle wszystkie, ale nie zawsze */
+const LAUNCH=id=>Math.min(POS(id),Math.max(0,db[id].launched||POS(id)));
+const windPos=id=>Math.max(0,LAUNCH(id)-(db[id].zryw||0));       /* liczy się do tempa */
+const cleanPos=id=>Math.max(0,LAUNCH(id)-(db[id].zrywCycle||0)); /* liczy się do wagi */
+const deadPos=id=>Math.max(0,POS(id)-windPos(id));               /* wszystko, co leci w odpad */
+const effPos=id=>cleanPos(id);
+const perPos=id=>kghOne(id)/POS(id);
+const kghEff=id=>perPos(id)*windPos(id);
+const cycleTh=id=>{const p=perPos(id);return p>0?db[id].cfg.kgNet/p:0;};
+const LT=e=>typeof e==="number"?e:e.t, LD=e=>typeof e==="number"?0:(e.d||0);
+const RUNS=["run","proba"];                 /* nawija na nawoje */
+const WASTE=["odpad","awaria"];             /* nitka leci w odpad */
+const paused=id=>!RUNS.includes(db[id].state);
+const counts=id=>db[id].state==="run";      /* próba nie wchodzi do produkcji */
+const sinceState=id=>paused(id)?Date.now()-db[id].stateSince:0;
+const downNow=id=>db[id].dwDoff+sinceState(id);
+const downShift=id=>db[id].dwShift+sinceState(id);
+const odpadMs=id=>db[id].odpShift+(WASTE.includes(db[id].state)?Date.now()-db[id].stateSince:0);
+/* zamykamy bieżący odcinek "ile pozycji stało i jak długo" */
+function flushZryw(id){const d=db[id],n=Date.now(),k=deadPos(id);
+  if(RUNS.includes(d.state)&&k>0)d.zrywPosMs+=k*(n-d.zrywSince);
+  d.zrywSince=n;}
+function zrywPosMsNow(id){const d=db[id],k=deadPos(id);
+  return d.zrywPosMs+((RUNS.includes(d.state)&&k>0)?k*(Date.now()-d.zrywSince):0);}
+/* Bilans kilogramów. Ekstruder podaje tyle samo niezależnie od zrywów — zmienia się tylko to,
+   ile z tego ląduje na nawojach. Reszta jest fizycznie stracona i NIE liczy się do zlecenia,
+   więc te kilogramy trzeba domotać: zlecenie trwa dłużej. */
+const odpadKg=id=>kghOne(id)*odpadMs(id)/HOUR + perPos(id)*zrywPosMsNow(id)/HOUR;
+const feedKgh=id=>kghOne(id);                       /* podaż z ekstrudera — stała */
+const windKgh=id=>perPos(id)*windPos(id);           /* realnie nawijane na nawoje */
+const lossKgh=id=>feedKgh(id)-(paused(id)?0:windKgh(id));
+function balance(id){const d=db[id],now=Date.now(),sb=bounds(id,now);
+  const elapsed=Math.max(0,Math.min(SHIFT_H*HOUR,now-sb.start));
+  const stopMs=Math.max(0,downShift(id)-odpadMs(id));   /* postój: ekstruder nie podaje */
+  const fed=feedKgh(id)*Math.max(0,elapsed-stopMs)/HOUR;
+  const lost=Math.min(fed,odpadKg(id));
+  return{fed,lost,wound:Math.max(0,fed-lost),elapsed,stopMs};}
+function cycleRe(id){const L=db[id].log;if(L.length<2)return 0;
+  const n=Math.min(L.length-1,6),a=L.slice(-n-1);let s=0,k=0;
+  for(let i=1;i<a.length;i++){const g=LT(a[i])-LT(a[i-1])-LD(a[i]);if(g>0){s+=g;k++;}}
+  return k?s/k/HOUR:0;}
+const kghRe=id=>{const c=cycleRe(id);return c>0?db[id].cfg.kgNet*POS(id)/c:0;};
+
+/* prędkość nawijania pozwala sprawdzić, czy wydajność i masa nawoju trzymają się kupy */
+const dtexCalc=id=>{const sp=db[id].spd||0;return sp>0?perPos(id)*1e7/(sp*60):0;};
+const lenNw=id=>{const sp=db[id].spd||0;return sp>0?cycleTh(id)*sp*60:0;};
+
+/* ---------- handover ---------- */
+/* Rozbicie tego, co wisi na maszynie: pozycje czyste dokręcą się do A1,
+   włókienko dokręci się do pełnej wagi, ale pójdzie na B, a zerwane stoją na zamrożonej wadze. */
+function handover(id){const d=db[id],cyc=cycleTh(id)*HOUR,now=Date.now(),zk=d.zrywKg||0;
+  const zc=d.zrywCycle||0,wl=d.wlok||0,a1n=Math.max(0,LAUNCH(id)-zc-wl);
+  if(cyc<=0)return{one:0,a1n,a1kg:0,wn:wl,wkg:0,zn:zc,zkg:zk,kgNow:zk,kgEnd:zk,doffs:0,nw:0};
+  const dw=downNow(id);
+  const fr=Math.min(1,Math.max(0,now-d.doffStart-dw)/cyc);
+  const one=fr*d.cfg.kgNet;                       /* kg na jednej nawijającej pozycji */
+  const runEnd=Math.max(0,bounds(id,now).end-d.doffStart-dw);
+  const doffs=Math.floor(runEnd/cyc);
+  const frEnd=(runEnd-doffs*cyc)/cyc;
+  return{one,a1n,a1kg:a1n*one,wn:wl,wkg:wl*one,zn:zc,zkg:zk,
+    kgNow:(a1n+wl)*one+zk,kgEnd:frEnd*d.cfg.kgNet*effPos(id)+zk,doffs,nw:doffs*POS(id)};}
+
+/* ---------- pallets ---------- */
+function palPlan(){const out={};
+  G.forEach(g=>{
+    const rows=LINES.map(l=>{const d=db[l.id];
+      const lab=(labOn(l.id)&&LABG===g)?POS(l.id):0;
+      return{id:l.id,name:l.name,norm:PAL(l.id),n:d.stock[g].n,lab,eff:Math.max(0,d.stock[g].n-lab)};});
+    const total=rows.reduce((s,r)=>s+r.eff,0);
+    const full=rows.filter(r=>r.eff>=r.norm);
+    let act=null;
+    if(full.length)act={t:"pack",rows:full};
+    else{const half=rows.filter(r=>r.eff>r.norm/2);
+      if(half.length){const tg=rows.slice().sort((a,b)=>b.eff-a.eff)[0];
+        act= total>=tg.norm ? {t:"merge",tg,total} : {t:"short",tg,total,x:tg.norm-total};}}
+    out[g]={rows,total,act};});
+  return out;}
+
+/* ---------- format ---------- */
+const loc=()=>lang==="pl"?"pl-PL":"en-GB";
+const n1=v=>(isFinite(v)?v:0).toLocaleString(loc(),{maximumFractionDigits:1});
+const n0=v=>Math.round(isFinite(v)?v:0).toLocaleString(loc());
+const hms=ms=>{ms=Math.max(0,Math.round(ms/1000));const h=Math.floor(ms/3600),m=Math.floor(ms%3600/60),s=ms%60;
+  return[h,m,s].map(x=>String(x).padStart(2,"0")).join(":");};
+const hm=ms=>{ms=Math.max(0,Math.round(ms/60000));const h=Math.floor(ms/60),m=ms%60;return(h?h+" h ":"")+m+" min";};
+const dhm=ms=>{ms=Math.abs(ms);const d=Math.floor(ms/86400000),h=Math.round(ms%86400000/HOUR);return(d?d+" "+t("d")+" ":"")+h+" h";};
+const clk=ts=>new Date(ts).toLocaleTimeString(loc(),{hour:"2-digit",minute:"2-digit"});
+const stp=ts=>new Date(ts).toLocaleString(loc(),{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+let tT;const toast=m=>{const e=$("toast");e.textContent=m;e.classList.add("on");clearTimeout(tT);tT=setTimeout(()=>e.classList.remove("on"),2300);};
+
+/* ---------- drawer ---------- */
+const drawer=o=>{$("drawer").classList.toggle("on",o);$("scrim").classList.toggle("on",o);};
+$("open").onclick=()=>drawer(true);$("scrim").onclick=()=>drawer(false);
+function buildDrawer(){const box=$("dlist");box.innerHTML="";
+  const sv=document.createElement("button");sv.className="ln";sv.dataset.g="X";
+  sv.setAttribute("aria-current",String(view==="stock"));
+  sv.innerHTML='<i></i><div><b></b><em></em></div>';
+  sv.querySelector("b").textContent=t("vstock");
+  sv.querySelector("em").textContent=LINES.reduce((s,l)=>s+gN(db[l.id].stock),0)+" szt";
+  sv.onclick=()=>{view="stock";render();drawer(false);};
+  box.appendChild(sv);
+  const dv=document.createElement("button");dv.className="ln";dv.dataset.g="X";
+  dv.setAttribute("aria-current",String(view==="doffs"));
+  dv.innerHTML='<i></i><div><b></b><em></em></div>';
+  dv.querySelector("b").textContent=t("doffTab");
+  {const nx=LINES.map(l=>schedule(l.id,1)[0]).filter(Boolean).sort((a,b)=>a-b)[0];
+   dv.querySelector("em").textContent=nx?t("nextIs")+" "+clk(nx):"";}
+  dv.onclick=()=>{view="doffs";render();drawer(false);};
+  box.appendChild(dv);
+  const hv=document.createElement("button");hv.className="ln";hv.dataset.g="X";
+  hv.setAttribute("aria-current",String(view==="hist"));
+  hv.innerHTML='<i></i><div><b></b><em></em></div>';
+  hv.querySelector("b").textContent=t("hist");
+  hv.querySelector("em").textContent=histMonths().reduce((a,m)=>a+histLoad(m).length,0)+" szt";
+  hv.onclick=()=>{view="hist";render();drawer(false);};
+  box.appendChild(hv);
+  let g="";
+  LINES.forEach(l=>{if(l.g!==g){g=l.g;const h=document.createElement("div");h.className="grp";
+      h.textContent=g==="PA"?"PA — poliamid / polyamide":"PP — polipropylen / polypropylene";box.appendChild(h);}
+    const d=db[l.id],b=document.createElement("button");
+    b.className="ln";b.dataset.g=l.g;b.setAttribute("aria-current",String(view==="line"&&l.id===cur));
+    b.innerHTML='<i></i><div><b></b><em></em></div>';
+    b.querySelector("b").textContent=l.name;
+    b.querySelector("em").textContent=(d.state!=="run"?"■ "+t(
+      {proba:"stProba",odpad:"stOdpad",awaria:"stAwaria",stop:"stopped"}[d.state])+" · ":"")+
+      (d.zryw?"⚠ "+d.zryw+" · ":"")+(d.wlok?"◆ "+d.wlok+" · ":"")+
+      gN(d.stock)+" szt";
+    if(d.state==="odpad"||d.state==="proba")b.querySelector("i").style.background="var(--amber)";
+    else if(d.state==="stop"||d.state==="awaria")b.querySelector("i").style.background="var(--bad)";
+    b.onclick=()=>{cur=l.id;view="line";store.set("ex3_line",cur);loadInputs();render();drawer(false);};
+    box.appendChild(b);});}
+
+/* ---------- labels ---------- */
+const LBL={t_doff:"doff",t_nwDoff:"nwDoff",t_cycTh:"cycTh",t_cycRe:"cycRe",t_dwDoff:"dwDoff",
+ t_zryw:"zryw",t_zrywNow:"zrywNow",t_effPos:"effPos",t_zrywShift:"zrywShift",
+ t_out:"out",t_kghr:"kghr",t_spr:"spr",t_kgshift:"kgshift",t_nwshift:"nwshift",
+ t_dwShift:"dwShift",t_avail:"avail",t_odpShift:"odpShift",
+ t_feed:"feed",t_wind:"wind",t_lossR:"lossR",t_wound:"wound",t_lost:"lost",
+ t_lnHead:"lnHead",t_ospd:"ospd",t_obc:"obc",t_utyl:"utyl",
+ t_windPos:"windPos",t_zrywCycle:"zrywCycle",t_launched:"launched",t_launchedRow:"launchedRow",t_hand:"hand",t_kgNow:"kgNow",t_kgEnd:"kgEnd",
+ t_doffLeft:"doffLeft",t_nwLeft:"nwLeft",t_pack:"pack",t_sum:"sum",t_kgsum:"kgsum",
+ t_handNorm:"handNorm",t_hA1:"hA1",t_hBw:"hBw",t_hBz:"hBz",t_stockShift:"stockShift",t_zrywKg:"zrywKg",t_dpT:"dpT",t_dpA2kg:"dpA2kg",
+ t_dpZrywKg:"dpZrywKg",t_dpWlokKg:"dpWlokKg",t_wlokNow:"wlokNow",t_wlokShift:"wlokShift",
+ t_shA1:"shA1",t_shA2:"shA2",t_shB:"shB",t_shBwhy:"shBwhy",
+ t_ord:"ord",t_onr:"onr",t_olot:"olot",t_oidx:"oidx",t_okg:"okg",t_okgh:"okgh",t_odl:"odl",
+ t_opack:"opack",t_oun:"oun",t_packIn:"packIn",t_omade:"omade",t_oleft:"oleft",t_oend:"oend",t_osh:"osh",t_pair:"pair",
+ t_set:"set",t_pos:"pos",t_palN:"palN",t_kgnet:"kgnet",t_tube:"tube",t_sh1:"sh1",t_gross:"gross",
+ t_kghint:"kghint",t_labT:"labT",t_labGrade:"labGrade",t_stockT:"stockT",t_palT:"palT",
+ t_notifT:"notifT",t_notifLead:"notifLead",
+ t_histT:"histT",t_histMonth:"histMonth",t_histList:"histList",
+ t_schedT:"schedT",t_firstT:"firstT"};
+function applyLang(){document.documentElement.lang=lang;
+  for(const i in LBL){const e=$(i);if(e)e.textContent=t(LBL[i]);}
+  $("btnDoff").textContent=t("doffBtn");$("btnReset").textContent=t("reset");
+  $("dpSave").textContent=t("dpSave");$("dpCancel").textContent=t("dpCancel");
+  ["btnOdpad","btnAwaria","btnStop","btnProba","btnStart","btnResume"].forEach(b=>$(b).textContent=t(b));
+  $("odpNote").textContent=t("odpNote");$("notifNote").textContent=t("notifNote");
+  $("btnNotif").textContent=NOTIF.on?t("notifOff"):t("notifOn");
+  $("btnScan").textContent=t("scan");$("scanNote").textContent=t("scanNote");
+  $("btnPackAdd").textContent=t("packAdd");$("btnPackSet").textContent=t("packSet");
+  $("btnPackUndo").textContent=t("packUndo");$("packHint").textContent=t("packNote");
+  $("btnCsv").textContent=t("csv");$("btnCsvAll").textContent=t("csvAll");
+  $("histNote").textContent=t("histNote");
+  $("packNote").textContent=t("packNote");$("btnClearLog").textContent=t("clearLog");
+  $("btnExport").textContent=t("exp");$("btnImport").textContent=t("imp");
+  $("dSub").textContent=t("pick");$("foot").textContent=t("app")+" 7.0";
+  $("handNote").textContent=t("handNote");
+  $("oPair").options[0].textContent=t("pairBoth");$("oPair").options[1].textContent=t("pairOne");
+  document.querySelectorAll(".lang button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.l===lang)));}
+document.querySelectorAll(".lang button").forEach(b=>b.onclick=()=>{lang=b.dataset.l;store.set("ex3_lang",lang);applyLang();render();});
+
+/* ---------- inputs ---------- */
+function loadInputs(){const d=S();
+  $("sPos").value=POS(cur)+" szt";$("sPalN").value=PAL(cur)+" szt";
+  $("sKg").value=d.cfg.kgNet;$("sTube").value=d.cfg.kgTube;$("sShift").value=d.cfg.sh;
+  $("oNr").value=d.ord.nr;$("oLot").value=d.ord.lot;$("oIdx").value=d.ord.idx;
+  $("oKg").value=d.ord.kg||"";$("oKgh").value=d.ord.kgh||"";$("oDl").value=d.ord.dl||"";
+  $("oSpd").value=d.spd||"";
+  $("oPair").value=String(d.ord.pairKgh?1:0);$("pairBox").hidden=!L_(cur).pair;
+  $("notifLead").value=String(NOTIF.min);}
+const fnum=(el,d)=>{const v=parseFloat(String(el.value).replace(",","."));return isFinite(v)&&v>0?v:d;};
+[["sKg","kgNet",3],["sTube","kgTube",0.31]].forEach(([i,k,d])=>
+  $(i).oninput=()=>{S().cfg[k]=fnum($(i),d);save();paint();});
+$("sShift").onchange=()=>{S().cfg.sh=parseInt($("sShift").value,10);save();paint();};
+$("oPair").onchange=()=>{const v=$("oPair").value==="1"?1:0;S().ord.pairKgh=v;
+  const p=L_(cur).pair;if(p)db[p].ord.pairKgh=v;save();paint();};
+/* Kod kreskowy z bloczka czyta się pewnie — odczyt pisma ręcznego już nie, więc
+   liczby obciągów i gatunki zostają na licznikach. */
+$("btnScan").onclick=()=>{
+  if(!("BarcodeDetector" in window)){toast(t("scanNo"));return;}
+  $("scanFile").value="";$("scanFile").click();};
+$("scanFile").onchange=async()=>{
+  const f=$("scanFile").files&&$("scanFile").files[0];if(!f)return;
+  try{
+    const det=new BarcodeDetector({formats:["code_128","code_39","ean_13","itf","codabar","qr_code"]});
+    const bmp=await createImageBitmap(f);
+    const codes=await det.detect(bmp);
+    if(!codes.length){toast(t("scanNone"));return;}
+    const v=String(codes[0].rawValue||"").trim();
+    if(!v){toast(t("scanNone"));return;}
+    S().ord.nr=v;const p=L_(cur).pair;if(p)db[p].ord.nr=v;
+    save();loadInputs();paint();buildDrawer();toast(t("scanOk",{n:v}));
+  }catch(e){toast(t("scanNone"));}};
+$("oSpd").oninput=()=>{S().spd=fnum($("oSpd"),0);
+  const p=L_(cur).pair;if(p&&(db[p].ord.nr||"").trim()===(S().ord.nr||"").trim())db[p].spd=S().spd;
+  save();paint();};
+[["oNr","nr"],["oLot","lot"],["oIdx","idx"],["oDl","dl"]].forEach(([i,k])=>
+  $(i).oninput=()=>{S().ord[k]=$(i).value;save();paint();buildDrawer();});
+[["oKg","kg"],["oKgh","kgh"]].forEach(([i,k])=>
+  $(i).oninput=()=>{S().ord[k]=fnum($(i),0);const p=L_(cur).pair;
+    if(p&&(db[p].ord.nr||"").trim()===(S().ord.nr||"").trim())db[p].ord[k]=S().ord[k];
+    save();paint();buildDrawer();});
+/* Spakowane liczymy w kilogramach, bo paletę i tak się waży — to liczba fizyczna,
+   niezależna od tego, czy ktoś miał w tym czasie otwartą aplikację. */
+const ordScope=()=>{const nr=(S().ord.nr||"").trim();
+  return nr?LINES.filter(l=>(db[l.id].ord.nr||"").trim()===nr).map(l=>l.id):[cur];};
+const packKgTotal=()=>ordScope().reduce((a,id)=>a+(db[id].ord.packKg||0),0);
+function packPush(kg,set){const o=S().ord;
+  o.packLog.push({t:Date.now(),kg,set,prev:set?ordScope().map(id=>[id,db[id].ord.packKg||0]):null});
+  if(o.packLog.length>12)o.packLog=o.packLog.slice(-12);}
+$("btnPackAdd").onclick=()=>{const v=parseFloat(String($("packIn").value).replace(",","."));
+  if(!isFinite(v)||v<=0){toast(t("packBad"));return;}
+  const o=S().ord;packPush(v,false);o.packKg=+((o.packKg||0)+v).toFixed(2);
+  $("packIn").value="";save();paint();buildDrawer();toast(t("packAddOk",{k:n1(v)}));};
+$("btnPackSet").onclick=()=>{const v=parseFloat(String($("packIn").value).replace(",","."));
+  if(!isFinite(v)||v<0){toast(t("packBad"));return;}
+  packPush(v,true);
+  ordScope().forEach(id=>{db[id].ord.packKg=0;});      /* suma dotyczy całego zlecenia */
+  S().ord.packKg=+v.toFixed(2);
+  $("packIn").value="";save();paint();buildDrawer();toast(t("packSetOk",{k:n1(v)}));};
+$("btnPackUndo").onclick=()=>{const o=S().ord;const e=o.packLog.pop();
+  if(!e){toast(t("packNothing"));return;}
+  if(e.set&&e.prev)e.prev.forEach(([id,kg])=>{if(db[id])db[id].ord.packKg=kg;});
+  else o.packKg=Math.max(0,+((o.packKg||0)-e.kg).toFixed(2));
+  save();paint();buildDrawer();toast(t("packUndoOk",{k:n1(e.kg)}));};
+$("zrywKg").oninput=()=>{S().zrywKg=Math.max(0,parseFloat(String($("zrywKg").value).replace(",","."))||0);save();paint();};
+/* --- panel zapisu podmiany ---
+   A1/A2 tylko dla pozycji bez wad (dzieli je waga),
+   zryw i włókienko idą na B niezależnie od wagi. */
+let DP={a2:0,zryw:0,wlok:0,a2kg:0,zrywkg:0,wlokkg:0};
+const dpA1=()=>Math.max(0,LAUNCH(cur)-DP.a2-DP.zryw-DP.wlok);
+function openDP(){const d=S(),kn=d.cfg.kgNet;
+  DP={a2:0,zryw:d.zrywCycle||0,wlok:d.wlok||0,a2kg:0,
+      zrywkg:+((d.zrywKg||(d.zrywCycle||0)*kn/2)).toFixed(1),
+      wlokkg:+(((d.wlok||0)*kn)).toFixed(1)};
+  $("doffPanel").hidden=false;paintDP();
+  $("doffPanel").scrollIntoView({behavior:"smooth",block:"start"});}
+function paintDP(){const p=LAUNCH(cur),w=n1(S().cfg.kgNet);
+  $("t_dpA1").textContent=t("dpA1",{w});$("t_dpA2").textContent=t("dpA2",{w});
+  $("t_dpZryw").textContent=t("dpZryw");$("t_dpWlok").textContent=t("dpWlok");
+  $("dpA1").textContent=dpA1();$("dpA2").textContent=DP.a2;
+  $("dpZryw").textContent=DP.zryw;$("dpWlok").textContent=DP.wlok;
+  if(document.activeElement!==$("dpA2kg"))$("dpA2kg").value=DP.a2kg||"";
+  if(document.activeElement!==$("dpZrywKg"))$("dpZrywKg").value=DP.zrywkg||"";
+  if(document.activeElement!==$("dpWlokKg"))$("dpWlokKg").value=DP.wlokkg||"";
+  const n=dpA1()+DP.a2+DP.zryw+DP.wlok,f=$("dpCheck");
+  const overflow=DP.a2+DP.zryw+DP.wlok>p;
+  f.className="flag "+(overflow?"warn":"ok");
+  f.textContent=overflow?t("dpBad",{n:DP.a2+DP.zryw+DP.wlok,p}):t("dpOk",{n,p});}
+document.querySelectorAll("[data-dp]").forEach(b=>b.onclick=()=>{
+  const k=b.dataset.dp,kn=S().cfg.kgNet;
+  DP[k]=Math.max(0,DP[k]+parseInt(b.dataset.v,10));
+  if(k==="a2")DP.a2kg=+(DP.a2*kn/2).toFixed(1);
+  if(k==="zryw")DP.zrywkg=+(DP.zryw*kn/2).toFixed(1);
+  if(k==="wlok")DP.wlokkg=+(DP.wlok*kn).toFixed(1);
+  paintDP();});
+const dpKg=(id,k)=>$(id).oninput=()=>{DP[k]=Math.max(0,parseFloat(String($(id).value).replace(",","."))||0);};
+dpKg("dpA2kg","a2kg");dpKg("dpZrywKg","zrywkg");dpKg("dpWlokKg","wlokkg");
+$("dpCancel").onclick=()=>{$("doffPanel").hidden=true;};
+$("dpSave").onclick=()=>{const d=S(),n=Date.now(),kn=d.cfg.kgNet,a1=dpA1();
+  const bN=DP.zryw+DP.wlok, bKg=(DP.zryw?DP.zrywkg:0)+(DP.wlok?DP.wlokkg:0);
+  const add={a1:{n:a1,kg:a1*kn},a2:{n:DP.a2,kg:DP.a2?DP.a2kg:0},b:{n:bN,kg:bKg}};
+  const scrap=(d.obciag===0)||(d.state==="proba");
+  if(scrap){const tn=a1+DP.a2+bN,tk=a1*kn+(DP.a2?DP.a2kg:0)+bKg;
+    d.utyl.n+=tn;d.utyl.kg+=tk;}
+  else{G.forEach(g=>{d.stock[g].n+=add[g].n;d.stock[g].kg+=add[g].kg;
+                     d.shift[g].n+=add[g].n;d.shift[g].kg+=add[g].kg;});
+       d.shB.zryw+=DP.zryw;d.shB.wlok+=DP.wlok;}
+  d.obciag=(d.obciag||0)+1;d.shiftDoffs=(d.shiftDoffs||0)+1;
+  d.log.push({t:n,d:downNow(cur)});if(d.log.length>24)d.log=d.log.slice(-24);
+  d.doffStart=n;d.dwDoff=0;d.zryw=0;d.zrywCycle=0;d.zrywKg=0;d.zrywPkg=[];d.wlok=0;
+  d.launched=POS(cur);d.notifDoff=0;d.notifPal=0;
+  if(d.state!=="run"){const dt=n-d.stateSince;d.dwShift+=dt;
+    if(d.state==="odpad")d.odpShift+=dt;d.stateSince=n;}
+  $("doffPanel").hidden=true;save();render();
+  toast(scrap?t("utylOk",{n:a1+DP.a2+bN}):t("dpDone",{n:a1+DP.a2+bN}));};
+$("btnDoff").onclick=openDP;
+function setState(ns){const d=S(),n=Date.now();flushZryw(cur);
+  if(d.state!=="run"){const dt=n-d.stateSince;       /* zamykamy poprzednią przerwę */
+    d.dwDoff+=dt;d.dwShift+=dt;
+    if(d.state==="odpad")d.odpShift+=dt;}
+  d.state=ns;d.stateSince=n;
+  d.events.push({t:n,s:ns});if(d.events.length>24)d.events=d.events.slice(-24);
+  save();paint();buildDrawer();}
+$("btnOdpad").onclick=()=>setState("odpad");
+$("btnAwaria").onclick=()=>setState("awaria");
+$("btnStop").onclick=()=>setState("stop");
+$("btnProba").onclick=()=>setState("proba");
+/* Start produkcji = nowe zlecenie / nowy typ nitki. Obciąg wraca na 0, cykl liczy się od nowa. */
+$("btnStart").onclick=()=>{if(!confirm(t("startAsk")))return;
+  const d=S();flushZryw(cur);
+  d.obciag=0;d.doffStart=Date.now();d.dwDoff=0;
+  d.zryw=0;d.zrywCycle=0;d.zrywKg=0;d.zrywPkg=[];d.wlok=0;d.launched=POS(cur);
+  d.notifDoff=0;d.notifPal=0;setState("run");toast(t("startOk"));};
+/* Maszyna puszczona = to samo zlecenie, przewleczone pozycje znów nawijają.
+   Obciąg i waga na nawojach lecą dalej; zrywCycle zostaje, bo te nawoje pójdą na B. */
+$("btnResume").onclick=()=>{const d=S();flushZryw(cur);d.zryw=0;setState("run");};
+/* „Puszczone pozycje" wracają przy podmianie na komplet (8 albo 6) — operator koryguje,
+   jeśli faktycznie ruszyło mniej */
+$("btnReset").onclick=()=>{if(confirm(t("resetAsk"))){S().shift=mkG();save();paint();toast(t("resetOk"));}};
+$("btnClearLog").onclick=()=>{if(confirm(t("logAsk"))){S().log=[];save();paint();}};
+$("btnExport").onclick=async()=>{const s=JSON.stringify({v:4,db});
+  try{await navigator.clipboard.writeText(s);toast(t("copied"));}catch(e){prompt(t("exp"),s);}};
+$("btnImport").onclick=()=>{const s=prompt(t("impAsk"),"");if(!s)return;
+  try{const o=JSON.parse(s);if(!o||!o.db)throw 0;
+    LINES.forEach(l=>{if(o.db[l.id])db[l.id]={...DEF(),...o.db[l.id]};});
+    save();loadInputs();render();toast(t("impOk"));}catch(e){toast(t("impBad"));}};
+$("btnLab").onclick=()=>{const v=!labOn(cur);LINES.forEach(l=>{db[l.id].labSet=v;});save();render();};
+$("labGrade").onchange=()=>{LABG=$("labGrade").value;store.set("ex3_labg",LABG);paintStock();};
+
+/* ---------- powiadomienia ----------
+   Alarm liczy wszystkie maszyny, nie tylko otwartą. Dźwięk i wibracja są zapasem
+   na wypadek, gdy system nie przepuści powiadomienia. */
+let NOTIF={on:store.get("ex3_notif")==="1",min:parseInt(store.get("ex3_notifmin")||"5",10)};
+let AC=null;
+function beep(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+  if(AC.state==="suspended")AC.resume();
+  [0,0.6].forEach(off=>{const o=AC.createOscillator(),g=AC.createGain();
+    o.connect(g);g.connect(AC.destination);o.type="square";o.frequency.value=880;
+    const t0=AC.currentTime+off;
+    g.gain.setValueAtTime(0.0001,t0);
+    g.gain.exponentialRampToValueAtTime(0.25,t0+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001,t0+0.45);
+    o.start(t0);o.stop(t0+0.5);});}catch(e){}}
+function notify(title,body){
+  try{if("Notification" in window&&Notification.permission==="granted"){
+    const o={body,icon:"icon-192.png",badge:"icon-192.png",tag:"ekstruzja",renotify:true,
+             vibrate:[300,120,300],requireInteraction:true};
+    if(navigator.serviceWorker&&navigator.serviceWorker.ready)
+      navigator.serviceWorker.ready.then(r=>r.showNotification(title,o)).catch(()=>{new Notification(title,o);});
+    else new Notification(title,o);}}catch(e){}
+  try{navigator.vibrate&&navigator.vibrate([300,120,300]);}catch(e){}
+  beep();toast(title);}
+
+/* czy najbliższa podmiana domknie paletę któregoś gatunku */
+function palletAfterDoff(id){const d=db[id],norm=PAL(id);
+  if(d.obciag===0||d.state==="proba")return null;        /* ten obciąg idzie do utylizacji */
+  const bAdd=(d.zrywCycle||0)+(d.wlok||0);
+  const add={a1:Math.max(0,LAUNCH(id)-bAdd),a2:0,b:bAdd};
+  for(const g of G){
+    const lab=(labOn(id)&&LABG===g)?POS(id):0;
+    const after=Math.max(0,d.stock[g].n+add[g]-lab);
+    if(after>=norm)return{g:GN[g],n:after,norm};}
+  return null;}
+
+function nextDoffAt(id){const d=db[id],cr=cycleRe(id),ct=cycleTh(id),c=cr>0?cr:ct;
+  return c>0?d.doffStart+c*HOUR+downNow(id):0;}
+
+function checkAlerts(){
+  if(!NOTIF.on)return;
+  const lead=NOTIF.min*60000,now=Date.now();let dirty=false;
+  LINES.forEach(l=>{const d=db[l.id];
+    if(!RUNS.includes(d.state))return;
+    const next=nextDoffAt(l.id);if(!next)return;
+    const left=next-now;
+    if(left>0&&left<=lead&&d.notifDoff!==d.doffStart){
+      d.notifDoff=d.doffStart;dirty=true;
+      const pal=palletAfterDoff(l.id);
+      notify(t("nDoff",{l:l.name,m:Math.max(1,Math.round(left/60000))}),
+             pal?t("nPal",{g:pal.g,n:pal.n,norm:pal.norm}):"");}});
+  if(dirty)save();}
+setInterval(checkAlerts,15000);
+
+$("btnNotif").onclick=async()=>{
+  if(NOTIF.on){NOTIF.on=false;store.set("ex3_notif","0");applyLang();return;}
+  let ok="granted";
+  try{if("Notification" in window)ok=Notification.permission==="granted"?"granted":await Notification.requestPermission();}
+  catch(e){ok="denied";}
+  if(ok!=="granted"){toast(t("notifDenied"));return;}
+  NOTIF.on=true;store.set("ex3_notif","1");applyLang();beep();toast(t("notifOkMsg"));};
+$("notifLead").onchange=()=>{NOTIF.min=parseInt($("notifLead").value,10)||5;
+  store.set("ex3_notifmin",String(NOTIF.min));};
+
+/* ---------- paint: machine ---------- */
+function paint(){
+  rollShift();
+  const now=Date.now(),d=S(),c=d.cfg,o=d.ord,sb=bounds(cur,now);
+  $("hLine").textContent=L_(cur).name;
+  $("hSub").textContent=(sb.night?t("night"):t("day"))+" · "+clk(sb.start)+"–"+clk(sb.end)+(o.nr?" · "+o.nr:"");
+
+  const cTh=cycleTh(cur),cRe=cycleRe(cur),kRe=kghRe(cur),cUse=cRe>0?cRe:cTh;
+  const dwD=downNow(cur),stopped=paused(cur),card=$("doffCard");
+  const ST={run:"run",proba:"stProba",odpad:"stOdpad",awaria:"stAwaria",stop:"stopped"};
+  const stName=t(ST[d.state]||"run");
+  if(cUse>0){const next=d.doffStart+cUse*HOUR+dwD,left=next-now;
+    $("cd").textContent=hms(Math.abs(left));
+    $("doffInfo").innerHTML=stopped?t("paused",{s:stName}):(left>=0?t("at",{t:"<b>"+clk(next)+"</b>"}):"<b>"+t("late",{t:hm(-left)})+"</b>");
+    card.classList.toggle("late",!stopped&&left<0);card.classList.toggle("soon",!stopped&&left>=0&&left<15*60000);
+  }else{$("cd").textContent="--:--:--";$("doffInfo").textContent=t("nd");card.classList.remove("late","soon");}
+  card.classList.toggle("stop",stopped);
+  const col=d.state==="run"?["var(--ok)","var(--ok-bg)"]
+          :(d.state==="proba"||d.state==="odpad")?["var(--amber)","var(--amber-bg)"]
+          :["var(--bad)","var(--bad-bg)"];
+  $("dot").style.background=col[0];$("dot").style.boxShadow="0 0 0 4px "+col[1];
+  $("stText").innerHTML=stName+'<em id="stSub"></em>';
+  $("stSub").textContent=stopped?t("stopSince",{t:clk(d.stateSince),d:hm(now-d.stateSince)}):"";
+  $("btnResume").hidden=!stopped;
+  [["btnOdpad","odpad"],["btnAwaria","awaria"],["btnStop","stop"],["btnProba","proba"]]
+    .forEach(([b,st])=>$(b).classList.toggle("back",d.state===st));
+  $("vNwDoff").textContent=LAUNCH(cur)+" szt";
+  const scrap=(d.obciag===0)||(d.state==="proba");
+  $("vObc").textContent=d.obciag===0?"0":d.obciag;
+  const of=$("obcFlag");of.hidden=!scrap;
+  if(scrap){of.className="flag warn";of.textContent=d.state==="proba"?t("probaFlag"):t("obc0");}
+  const pn=palletAfterDoff(cur),pf=$("palNextFlag");pf.hidden=!pn;
+  if(pn){pf.className="flag ok";pf.textContent=t("palNext",{g:pn.g,n:pn.n,norm:pn.norm});}
+  $("vCycTh").textContent=cTh>0?hm(cTh*HOUR):"–";
+  $("vCycRe").textContent=cRe>0?hm(cRe*HOUR):"–";
+  $("vDwDoff").textContent=dwD?hm(dwD):"–";
+
+  $("vZryw").textContent=d.zryw;$("vWlok").textContent=d.wlok;
+  $("vLaunched").textContent=LAUNCH(cur)+" / "+POS(cur);
+  $("vWindPos").textContent=windPos(cur)+" / "+POS(cur);
+  $("vLaunchSet").textContent=LAUNCH(cur);
+  $("launchNote").textContent=t("launchNote",{p:POS(cur)});
+  $("vZrywCycle").textContent=d.zrywCycle;
+  $("vEffPos").textContent=cleanPos(cur)+" / "+POS(cur);
+  $("vZrywShift").textContent=d.zrywShift;$("vWlokShift").textContent=d.wlokShift;
+  $("gradeNote").textContent=t("gradeNote",{w:n1(c.kgNet)})+" · "+t("zrywNote");
+  const dt=dtexCalc(cur);
+  $("spdNote").textContent=dt>0?t("spdNote",{d:n1(dt),m:n0(lenNw(cur))}):"";
+  const zf=$("zrywFlag");zf.hidden=!(d.zryw||d.zrywCycle||d.wlok||LAUNCH(cur)<POS(cur));
+  if(d.zryw){zf.className="flag "+(windPos(cur)===0?"bad":"warn");
+    zf.textContent=(windPos(cur)===0?t("zrywAll")
+      :t("zrywFlag",{w:windPos(cur),p:POS(cur),n:d.zryw}))+
+      (d.zrywPkg.length?" · "+t("zrywFroze",{l:d.zrywPkg.map(x=>n1(x)+" kg").join(" + ")}):"");}
+  else if(d.zrywCycle){zf.className="flag n";
+    zf.textContent=t("zrywCyc",{n:d.zrywCycle})+
+      (d.zrywPkg.length?" · "+t("zrywFroze",{l:d.zrywPkg.map(x=>n1(x)+" kg").join(" + ")}):"");}
+  else if(LAUNCH(cur)<POS(cur)){zf.className="flag warn";
+    zf.textContent=t("launchFlag",{n:LAUNCH(cur),p:POS(cur),d:POS(cur)-LAUNCH(cur)});}
+  else if(d.wlok){zf.className="flag n";zf.textContent=t("wlokFlag");}
+
+  const kZ=windKgh(cur),kUse=kRe>0?kRe:kZ,bal=balance(cur);
+  $("pairNote").textContent=(L_(cur).pair&&kghOne(cur))?t("pairNote",{k:n1(kghOne(cur)),c:cTh>0?hm(cTh*HOUR):"–"}):"";
+  $("vFeed").textContent=feedKgh(cur)?n1(feedKgh(cur))+" kg/h":"–";
+  $("vWind").textContent=paused(cur)?"0 kg/h":n1(windKgh(cur))+" kg/h";
+  $("vLossR").textContent=n1(lossKgh(cur))+" kg/h";
+  $("vWound").textContent=n1(bal.wound)+" kg";
+  $("vLost").textContent=bal.lost?n1(bal.lost)+" kg":"–";
+  $("vSpr").textContent=bal.fed>0?Math.round(bal.wound/bal.fed*100)+" %":"–";
+  $("vKghR").textContent=kRe?n1(kRe)+" kg/h":"–";
+  $("vKgShift").textContent=kUse?n0(kUse*SHIFT_H)+" kg":"–";
+  $("vNwShift").textContent=(kUse&&c.kgNet)?n1(kUse*SHIFT_H/c.kgNet):"–";
+  const dwS=downShift(cur),od=odpadMs(cur);
+  $("vOdpShift").textContent=od?hm(od):"–";
+  $("vDwShift").textContent=dwS-od>0?hm(dwS-od):"–";
+  /* stracone kilogramy trzeba domotać — pokazujemy, o ile to przeciąga zlecenie */
+  const lf=$("lossFlag");lf.hidden=!(bal.lost>0.05);
+  if(!lf.hidden){const r=windKgh(cur)||feedKgh(cur);
+    lf.className="flag warn";
+    lf.textContent=t("lossFlag",{k:n1(bal.lost),t:r>0?hm(bal.lost/r*HOUR):"–"});}
+  const elMs=Math.max(1,Math.min(SHIFT_H*HOUR,now-sb.start));
+  $("vAvail").textContent=Math.max(0,Math.round((1-dwS/elMs)*100))+" %";
+  $("pShift").style.width=(elMs/(SHIFT_H*HOUR)*100).toFixed(1)+"%";
+  $("shiftInfo").innerHTML=t("shiftLeft",{t:"<b>"+hm(sb.end-now)+"</b>",e:clk(sb.end)});
+
+  const ev=d.events.slice(-6).reverse(),eb=$("evBox");
+  eb.innerHTML=ev.length?'<div class="hint" style="margin:12px 0 2px">'+t("evT")+"</div>":"";
+  ev.forEach((e,i)=>{const nx=d.events[d.events.length-i];
+    const dur=(nx?nx.t:now)-e.t,row=document.createElement("div");row.className="log";
+    const EV={run:"evRun",proba:"stProba",odpad:"evOdpad",awaria:"stAwaria",stop:"evStop"};
+    row.innerHTML="<span>"+clk(e.t)+" "+t(EV[e.s]||"evRun")+
+      "</span><span>"+hm(dur)+"</span>";eb.appendChild(row);});
+
+  const hv=handover(cur);
+  $("vHA1").textContent=hv.a1n+" szt · "+n1(hv.a1kg)+" kg";
+  $("vHBw").textContent=hv.wn?hv.wn+" szt · "+n1(hv.wkg)+" kg":"–";
+  $("vHBz").textContent=hv.zn?hv.zn+" szt · "+n1(hv.zkg)+" kg":"–";
+  $("vHandNorm").textContent=effPos(cur)+" × "+n1(hv.one)+" kg";
+  $("vKgNow").textContent=n1(hv.kgNow)+" kg";
+  $("vDoffLeft").textContent=hv.doffs;
+  $("vNwLeft").textContent=hv.nw+" szt";
+  $("vKgEnd").textContent=n1(hv.kgEnd)+" kg";
+  if(document.activeElement!==$("zrywKg"))$("zrywKg").value=d.zrywKg||"";
+
+  const sh=d.shift,sum=gN(sh);
+  G.forEach(g=>{$("vSh"+GN[g]).textContent=sh[g].n+" szt · "+n1(sh[g].kg)+" kg";});
+  $("vSum").textContent=sum+" szt";$("vKgSum").textContent=n1(gKG(sh))+" kg";
+  $("vShBwhy").textContent=d.shB.zryw+" / "+d.shB.wlok;
+  $("vUtyl").textContent=d.utyl.n?d.utyl.n+" szt · "+n1(d.utyl.kg)+" kg":"–";
+
+  const nr=(o.nr||"").trim();
+  const sc=nr?LINES.filter(l=>(db[l.id].ord.nr||"").trim()===nr).map(l=>l.id):[cur];
+  $("joint").hidden=sc.length<2;
+  if(sc.length>1)$("joint").textContent=t("joint",{l:sc.map(i=>L_(i).name).join(" + ")});
+  const pkT=packKgTotal();
+  $("vPackKg").textContent=n1(pkT)+" kg"+(c.kgNet>0?"  "+t("packPcs",{n:Math.round(pkT/c.kgNet)}):"");
+  $("vUnp").textContent=gN(d.stock)+" szt · "+n1(gKG(d.stock))+" kg";
+  const pl=d.ord.packLog.slice(-4).reverse(),pb=$("packLogBox");
+  pb.innerHTML=pl.length?'<div class="hint" style="margin:10px 0 2px">'+t("packLogT")+"</div>":"";
+  pl.forEach(e=>{const r=document.createElement("div");r.className="log";
+    r.innerHTML="<span>"+stp(e.t)+" · "+t(e.set?"packSetTag":"packAddTag")+"</span><span>"+
+      (e.set?"= ":"+ ")+n1(e.kg)+" kg</span>";pb.appendChild(r);});
+  let madeKg=0,rate=0,nLog=0,anyRe=false;const active=[];
+  sc.forEach(id=>{const x=db[id];
+    madeKg+=(x.ord.packKg||0)+gKG(x.stock);
+    if(!counts(id))return;active.push(L_(id).name);
+    const r=kghRe(id);if(r>0){anyRe=true;nLog+=Math.max(0,x.log.length-1);}rate+=r>0?r:kghEff(id);});
+  const rf=$("runFlag");
+  if(!active.length){rf.className="flag bad";rf.textContent=t("allStop");}
+  else{rf.className="flag n";rf.textContent=t("runFlag",{l:active.join(" + ")});}
+  const totKg=o.kg||0,leftKg=Math.max(0,totKg-madeKg);
+  $("vMade").textContent=totKg?n0(madeKg)+" / "+n0(totKg)+" kg":"–";
+  $("vLeft").textContent=totKg?n0(leftKg)+" kg":"–";
+  $("pOrd").style.width=totKg?Math.min(100,madeKg/totKg*100).toFixed(1)+"%":"0%";
+  let end=0;
+  if(totKg&&rate>0){if(leftKg<=0){$("vEnd").textContent=t("ordDone");$("vSh").textContent="0";}
+    else{const h=leftKg/rate;end=now+h*HOUR;$("vEnd").textContent=stp(end);$("vSh").textContent=n1(h/SHIFT_H);}}
+  else{$("vEnd").textContent="–";$("vSh").textContent="–";}
+  const mg=$("margin"),dl=o.dl?new Date(o.dl).getTime():0;
+  if(end&&dl){const diff=dl-end;mg.className="flag "+(diff>=0?"ok":"bad");
+    mg.textContent=diff>=0?t("marginOk",{t:dhm(diff)}):t("marginBad",{t:dhm(diff)});}
+  else if(totKg&&leftKg<=0){mg.className="flag ok";mg.textContent=t("ordDone");}
+  else{mg.className="flag n";mg.textContent=t("marginNo");}
+  $("srcNote").textContent=rate>0?(anyRe?t("srcRe",{n:nLog}):t("srcZl")):"";
+
+  $("sGross").value=n1(c.kgNet+c.kgTube)+" kg";
+  const L=d.log.slice(-6).reverse(),lb=$("logBox");
+  lb.innerHTML=L.length?'<div class="hint" style="margin:8px 0 2px">'+t("logT")+"</div>":"";
+  L.forEach((en,i)=>{const p=d.log[d.log.length-1-i-1],e=document.createElement("div");e.className="log";
+    e.innerHTML="<span>"+stp(LT(en))+"</span><span>"+(p?hm(LT(en)-LT(p)-LD(en)):"–")+"</span>";lb.appendChild(e);});
+}
+
+/* ---------- paint: stock ---------- */
+function paintStock(){
+  rollShift();
+  const on=labOn(cur);
+  $("hLine").textContent=t("vstock");
+  $("hSub").textContent=on?t("labYes"):t("labNo");
+  $("labDot").classList.toggle("off",!on);
+  $("labText").textContent=on?t("labYes"):t("labNo");
+  $("btnLab").textContent=on?t("labOffB"):t("labOnB");
+  $("btnLab").classList.toggle("back",!on);
+  $("labGrade").value=LABG;
+  const lr=$("labRows");lr.innerHTML="";
+  if(on){LINES.forEach(l=>{const d=db[l.id],v=POS(l.id),e=document.createElement("div");e.className="log";
+      e.innerHTML="<span>"+l.name+"</span><span>−"+v+" → "+Math.max(0,d.stock[LABG].n-v)+" szt</span>";lr.appendChild(e);});
+    if(db[cur].labSet===null){const h=document.createElement("div");h.className="hint";h.style.margin="10px 0 0";
+      h.textContent=t("labAuto");lr.appendChild(h);}}
+
+  const sb=$("stockBox");sb.innerHTML="";
+  LINES.forEach(l=>{const d=db[l.id],card=document.createElement("div");card.className="mcard";
+    const head=document.createElement("div");head.className="mhead";
+    head.innerHTML="<b>"+l.name+"</b><em>"+t("palN")+" "+PAL(l.id)+" · "+t("total")+" "+gN(d.stock)+"</em>";
+    card.appendChild(head);
+    const grid=document.createElement("div");grid.className="three";
+    G.forEach(g=>{const col=document.createElement("div");col.className="gcol";
+      col.innerHTML='<div class="tag '+g+'">'+GN[g]+"</div>";
+      const inp=document.createElement("input");inp.type="number";inp.inputMode="numeric";inp.min="0";
+      inp.value=d.stock[g].n||0;
+      const sh=document.createElement("div");sh.className="side";sh.style.marginTop="4px";
+      sh.textContent=d.shift[g].n?"+"+d.shift[g].n+" "+t("shiftCol"):"";
+      inp.oninput=()=>{const old=d.stock[g],avg=old.n>0?old.kg/old.n:d.cfg.kgNet;
+        const nn=Math.max(0,parseInt(inp.value,10)||0);
+        d.stock[g]={n:nn,kg:+(nn*avg).toFixed(2)};save();paintPal();
+        head.innerHTML="<b>"+l.name+"</b><em>"+t("palN")+" "+PAL(l.id)+" · "+t("total")+" "+gN(d.stock)+"</em>";};
+      col.appendChild(inp);col.appendChild(sh);grid.appendChild(col);});
+    card.appendChild(grid);sb.appendChild(card);});
+  /* ile z tego przyszło na mojej zmianie — sumarycznie po wszystkich maszynach */
+  const sh=LINES.reduce((a,l)=>{G.forEach(g=>{a[g].n+=db[l.id].shift[g].n;a[g].kg+=db[l.id].shift[g].kg;});
+    a.u+=db[l.id].utyl.n;return a;},{a1:{n:0,kg:0},a2:{n:0,kg:0},b:{n:0,kg:0},u:0});
+  $("shiftTot").innerHTML=G.map(g=>
+    "<div>"+GN[g]+"</div><div class='num'>"+sh[g].n+" szt · "+n1(sh[g].kg)+" kg</div>").join("")+
+    "<div>"+t("sum")+"</div><div class='num big'>"+(sh.a1.n+sh.a2.n+sh.b.n)+" szt · "+
+    n1(sh.a1.kg+sh.a2.kg+sh.b.kg)+" kg</div>"+
+    (sh.u?"<div>"+t("utyl")+"</div><div class='num'>"+sh.u+" szt</div>":"");
+  paintPal();
+}
+function paintPal(){
+  const plan=palPlan(),box=$("palBox");box.innerHTML="";
+  G.forEach(g=>{const p=plan[g],wrap=document.createElement("div");wrap.style.marginBottom="14px";
+    const head=document.createElement("div");head.className="mhead";
+    head.innerHTML="<b>"+GN[g]+"</b><em>"+t("total")+": "+p.total+" szt"+
+      (p.rows.some(r=>r.lab)?" ("+t("afterLab")+")":"")+"</em>";
+    wrap.appendChild(head);
+    const f=document.createElement("div");f.style.margin="4px 0 0";
+    if(!p.act){f.className="flag n";f.textContent=t("actNone");}
+    else if(p.act.t==="pack"){f.className="flag bad";
+      f.textContent=p.act.rows.map(r=>t("actPack",{n:r.name,v:r.eff,norm:r.norm})).join(" · ");}
+    else if(p.act.t==="merge"){f.className="flag warn";
+      f.textContent=t("actMerge",{n:p.act.tg.name,v:p.act.total,norm:p.act.tg.norm});}
+    else{f.className="flag n";f.textContent=t("actShort",{x:p.act.x,v:p.act.total,norm:p.act.tg.norm});}
+    wrap.appendChild(f);box.appendChild(wrap);});
+}
+
+/* ---------- harmonogram podmian ----------
+   Każda nawijarka liczy się osobno. E1 podaje nitkę do N1A i N1B, ale nawijają niezależnie:
+   zryw na N1A nie zatrzymuje N1B, więc godziny podmian się rozjeżdżają. */
+function cycMs(id){const r=cycleRe(id);return (r>0?r:cycleTh(id))*HOUR;}
+function schedule(id,limit){const d=db[id],c=cycMs(id);
+  if(c<=0||!RUNS.includes(d.state))return[];
+  const end=bounds(id,Date.now()).end,out=[];
+  let t=d.doffStart+c+downNow(id);
+  while(t<=end&&out.length<(limit||12)){out.push(t);t+=c;}
+  return out;}
+/* godzina wpisana ręcznie trafia w okno bieżącej zmiany, także tej przez północ */
+function timeInShift(id,hh,mm){const sb=bounds(id,Date.now()),d0=new Date(sb.start);
+  let c=new Date(d0.getFullYear(),d0.getMonth(),d0.getDate(),hh,mm,0,0).getTime();
+  if(c<sb.start)c+=86400000;
+  if(c>sb.end)c-=86400000;
+  return c;}
+
+function paintDoffs(){
+  rollShift();
+  $("hLine").textContent=t("doffTab");$("hSub").textContent="";
+  $("schedNote").textContent=t("schedNote");
+  /* wspólna oś czasu: wszystkie maszyny posortowane po godzinie */
+  let all=[];
+  LINES.forEach(l=>schedule(l.id,8).forEach(ts=>all.push({ts,id:l.id})));
+  all.sort((a,b)=>a.ts-b.ts);
+  const box=$("schedBox");box.innerHTML="";
+  if(!all.length){box.innerHTML='<div style="color:var(--dim)">'+t("schedEmpty")+"</div>";}
+  all.slice(0,14).forEach((e,i)=>{
+    const near=all.filter(x=>x!==e&&Math.abs(x.ts-e.ts)<=15*60000);
+    const r=document.createElement("div");r.className="log";
+    r.innerHTML="<span><b>"+clk(e.ts)+"</b> · "+L_(e.id).name+
+      (near.length?" <span style='color:var(--amber)'>"+t("collide")+" "+
+        near.map(x=>L_(x.id).name.split(" ").pop()).join(", ")+"</span>":"")+
+      "</span><span>"+hm(e.ts-Date.now())+"</span>";
+    box.appendChild(r);});
+
+  const fb=$("firstBox");fb.innerHTML="";
+  LINES.forEach(l=>{const d=db[l.id],c=cycMs(l.id),card=document.createElement("div");
+    card.className="mcard";
+    const st=d.state==="run"?"":" · "+t({proba:"stProba",odpad:"stOdpad",awaria:"stAwaria",stop:"stopped"}[d.state]);
+    card.innerHTML="<div class='mhead'><b>"+l.name+"</b><em>"+
+      (c>0?t("cyc")+" "+hm(c):t("nd"))+st+"</em></div>";
+    const row=document.createElement("div");
+    row.style.cssText="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center";
+    const inp=document.createElement("input");inp.type="time";
+    inp.value=d.firstDoff?new Date(d.firstDoff).toTimeString().slice(0,5):"";
+    const btn=document.createElement("button");btn.className="tgl";btn.textContent=t("firstSet");
+    btn.onclick=()=>{const v=inp.value;if(!v)return;
+      const [hh,mm]=v.split(":").map(Number);
+      const ts=timeInShift(l.id,hh,mm);
+      d.firstDoff=ts;d.doffStart=ts;d.dwDoff=0;      /* ręczna kotwica cyklu */
+      save();paintDoffs();buildDrawer();toast(t("firstOk",{l:l.name,t:clk(ts)}));};
+    row.appendChild(inp);row.appendChild(btn);card.appendChild(row);
+    const nx=schedule(l.id,4);
+    const info=document.createElement("div");info.className="log";info.style.marginTop="6px";
+    info.innerHTML=nx.length
+      ?"<span>"+t("nextIs")+" <b>"+clk(nx[0])+"</b></span><span>"+
+       (nx.length>1?t("thenIs")+" "+nx.slice(1).map(clk).join(", "):"")+"</span>"
+      :"<span style='color:var(--dim)'>"+t("schedEmpty")+"</span><span></span>";
+    card.appendChild(info);fb.appendChild(card);});
+}
+
+/* ---------- raporty ---------- */
+const CSVH=["Data","Zmiana","Maszyna","Zlecenie","Lot","Obciagi",
+ "A1 szt","A1 kg","A2 szt","A2 kg","B szt","B kg","Utyl szt","Utyl kg",
+ "Zrywy","Wlokienka","Straty kg","Odpad min","Postoj min"];
+const csvRow=r=>[new Date(r.t).toLocaleDateString("pl-PL"),r.n?"noc":"dzien",
+  L_(r.m)?L_(r.m).name:r.m,r.o,r.lot||"",r.ob,
+  r.a1[0],r.a1[1],r.a2[0],r.a2[1],r.b[0],r.b[1],r.u[0],r.u[1],
+  r.z,r.w,r.str,r.odp,r.stp];
+function download(name,text){
+  try{const b=new Blob(["\ufeff"+text],{type:"text/csv;charset=utf-8"});
+    const u=URL.createObjectURL(b),a=document.createElement("a");
+    a.href=u;a.download=name;document.body.appendChild(a);a.click();
+    setTimeout(()=>{URL.revokeObjectURL(u);a.remove();},1000);
+    toast(t("csvOk",{f:name}));}
+  catch(e){prompt(name,text);}}
+function toCsv(rows){
+  return [CSVH.join(";")].concat(rows.map(r=>csvRow(r).join(";"))).join("\n");}
+$("btnCsv").onclick=()=>{const ym=$("histMonth").value,rows=histLoad(ym);
+  if(!rows.length){toast(t("csvNone"));return;}
+  download("ekstruzja-"+ym+".csv",toCsv(rows.slice().sort((a,b)=>a.t-b.t)));};
+$("btnCsvAll").onclick=()=>{let rows=[];histMonths().forEach(m=>{rows=rows.concat(histLoad(m));});
+  if(!rows.length){toast(t("csvNone"));return;}
+  download("ekstruzja-archiwum.csv",toCsv(rows.sort((a,b)=>a.t-b.t)));};
+$("histMonth").onchange=()=>paintHist(true);
+
+function paintHist(keep){
+  rollShift();
+  $("hLine").textContent=t("histT");$("hSub").textContent="";
+  const ms=histMonths(),sel=$("histMonth");
+  if(!keep){const cur0=sel.value;sel.innerHTML="";
+    (ms.length?ms:[ymOf(Date.now())]).forEach(m=>{const o=document.createElement("option");
+      o.value=m;o.textContent=m;sel.appendChild(o);});
+    if(cur0&&ms.includes(cur0))sel.value=cur0;}
+  const rows=histLoad(sel.value).slice().sort((a,b)=>b.t-a.t);
+  const sum=rows.reduce((a,r)=>({ob:a.ob+r.ob,n:a.n+r.a1[0]+r.a2[0]+r.b[0],
+    kg:a.kg+r.a1[1]+r.a2[1]+r.b[1],u:a.u+r.u[0],z:a.z+r.z,w:a.w+r.w,str:a.str+r.str}),
+    {ob:0,n:0,kg:0,u:0,z:0,w:0,str:0});
+  $("histTot").innerHTML=
+    "<div>"+t("hObc")+"</div><div class='num'>"+sum.ob+"</div>"+
+    "<div>A1 / A2 / B</div><div class='num'>"+sum.n+" szt</div>"+
+    "<div>"+t("kgsum")+"</div><div class='num big'>"+n1(sum.kg)+" kg</div>"+
+    "<div>"+t("utyl")+"</div><div class='num'>"+sum.u+" szt</div>"+
+    "<div>"+t("zryw")+"</div><div class='num'>"+sum.z+" / "+sum.w+"</div>"+
+    "<div>"+t("hStr")+"</div><div class='num'>"+n1(sum.str)+" kg</div>";
+  const box=$("histBox");box.innerHTML="";
+  if(!rows.length){const e=document.createElement("div");e.className="pad";e.style.color="var(--dim)";
+    e.textContent=t("histEmpty");box.appendChild(e);return;}
+  rows.forEach(r=>{const c=document.createElement("div");c.className="mcard";
+    const nm=L_(r.m)?L_(r.m).name:r.m;
+    c.innerHTML="<div class='mhead'><b>"+new Date(r.t).toLocaleDateString(loc(),{day:"2-digit",month:"2-digit"})+
+      " · "+(r.n?t("hNight"):t("hDay"))+"</b><em>"+nm+(r.o?" · "+r.o:"")+"</em></div>"+
+      "<div class='log'><span>A1 "+r.a1[0]+" · A2 "+r.a2[0]+" · B "+r.b[0]+"</span><span>"+
+      n1(r.a1[1]+r.a2[1]+r.b[1])+" kg</span></div>"+
+      "<div class='log'><span>"+t("hObc")+" "+r.ob+" · "+t("zryw")+" "+r.z+"/"+r.w+
+      (r.u[0]?" · "+t("utyl")+" "+r.u[0]:"")+"</span><span>"+t("hStr")+" "+n1(r.str)+" kg</span></div>";
+    box.appendChild(c);});
+}
+
+function render(){
+  $("viewLine").hidden=view!=="line";
+  $("viewStock").hidden=view!=="stock";
+  $("viewHist").hidden=view!=="hist";
+  $("viewDoff").hidden=view!=="doffs";
+  if(view==="line")paint();
+  else if(view==="stock")paintStock();
+  else if(view==="doffs")paintDoffs();
+  else paintHist();
+  buildDrawer();}
+applyLang();loadInputs();render();
+setInterval(()=>{if(view==="line")paint();else if(view==="doffs")paintDoffs();},1000);
+if("serviceWorker" in navigator&&location.protocol.startsWith("http")){navigator.serviceWorker.register("sw.js").catch(()=>{});}
+</script>
+</body>
+</html>
