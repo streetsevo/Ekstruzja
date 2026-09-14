@@ -165,6 +165,7 @@
       <button class="tgl" id="btnAwaria"></button>
       <button class="tgl" id="btnStop"></button>
       <button class="tgl" id="btnProba"></button>
+      <button class="tgl" id="btnKoniec" style="grid-column:1/-1"></button>
       <button class="tgl back" id="btnResume" style="grid-column:1/-1" hidden></button>
       <button class="tgl" id="btnStart" style="grid-column:1/-1"></button>
     </div>
@@ -222,6 +223,7 @@
         <div id="t_kgshift"></div><div class="num" id="vKgShift">–</div>
         <div id="t_nwshift"></div><div class="num" id="vNwShift">–</div>
         <div id="t_odpShift"></div><div class="num" id="vOdpShift">–</div>
+        <div id="t_konShift"></div><div class="num" id="vKonShift">–</div>
         <div id="t_dwShift"></div><div class="num" id="vDwShift">–</div>
         <div id="t_avail"></div><div class="num" id="vAvail">–</div>
       </div>
@@ -362,6 +364,10 @@
       <label><span id="t_gross"></span><input id="sGross" readonly></label>
     </div>
     <div class="hint warn" id="t_kghint"></div>
+    <div class="rows" style="margin-bottom:10px">
+      <div id="t_dbT"></div><div class="num" id="vDb">–</div>
+      <div id="t_dbUse"></div><div class="num" id="vDbUse">–</div>
+    </div>
     <div id="logBox"></div>
     <button class="btn ghost" id="btnClearLog" style="margin-top:12px"></button>
     <button class="btn ghost" id="btnExport" style="margin-top:8px"></button>
@@ -451,7 +457,7 @@ const DEF=()=>({cfg:{kgNet:3,kgTube:0.31,sh:6},
   zryw:0,zrywCycle:0,zrywKg:0,zrywShift:0,zrywPosMs:0,zrywSince:Date.now(),zrywPkg:[],
   zrywPos:[],zrywCycPos:[],wlokPos:[],zrywKgPos:{},journal:[],
   wlok:0,wlokShift:0,launched:0,labSet:null,
-  state:"run",stateSince:Date.now(),odpShift:0,events:[],
+  state:"run",stateSince:Date.now(),odpShift:0,konShift:0,events:[],
   obciag:0,shiftDoffs:0,utyl:{n:0,kg:0},spd:0,firstDoff:0,
   doffStart:Date.now(),log:[],dwDoff:0,dwShift:0,shKey:""});
 const SEED={
@@ -463,7 +469,9 @@ const T={pl:{
  doff:"Najbliższa podmiana",doffBtn:"Podmiana wykonana",at:"o {t}",late:"Opóźnienie {t}",doffOk:"Zapisano podmianę",
  nwDoff:"Nawoje z tej podmiany",cycTh:"Cykl wg zlecenia",cycRe:"Cykl zmierzony",dwDoff:"Postój od podmiany",
  run:"Produkcja",stopped:"Postój",stOdpad:"Odpad — przewlekanie",stAwaria:"Awaria — nitka w odpad",
- stProba:"Próba — nowy asortyment",
+ stProba:"Próba — nowy asortyment",stKoniec:"Koniec produkcji — brak zlecenia",
+ btnKoniec:"Koniec produkcji",konShift:"Brak zlecenia na zmianie",
+ konFlag:"Zlecenie skończone — maszyna czeka na nowe. Nowe uruchom przyciskiem „Start produkcji”.",
  btnOdpad:"Zryw → odpad",btnAwaria:"Awaria",btnStop:"Postój",btnProba:"Próba",
  btnStart:"Start produkcji — nowe zlecenie",btnResume:"Maszyna puszczona — to samo zlecenie",
  startAsk:"Start produkcji oznacza nowe zlecenie albo nowy typ nitki. Obciąg wraca na 0, a pierwszy obciąg pójdzie do utylizacji. Kontynuować?",
@@ -539,6 +547,8 @@ const T={pl:{
  set:"Ustawienia maszyny",pos:"Nawoje na podmianę",palN:"Norma palety",kgnet:"Masa nawoju netto (kg)",
  tube:"Waga cewki (kg)",sh1:"Start zmiany dziennej",gross:"Nawój brutto (kg)",
  kghint:"Masa nawoju zmienia się razem z artykułem — sprawdzaj przy każdym nowym zleceniu.",
+ dbT:"Baza raportów",dbUse:"Zajęte miejsce",dbIdb:"IndexedDB · {n} zmian",
+ dbLs:"Pamięć przeglądarki · {n} zmian",dbPersist:" · trwała",
  logT:"Ostatnie podmiany",clearLog:"Wyczyść historię podmian",logAsk:"Usunąć historię podmian?",
  exp:"Eksport danych",imp:"Import danych",copied:"Skopiowano do schowka",
  impAsk:"Wklej wyeksportowane dane:",impOk:"Wczytano",impBad:"Nieprawidłowe dane",nd:"brak danych",d:"d",
@@ -555,7 +565,7 @@ const T={pl:{
  histEmpty:"Brak zapisanych zmian w tym miesiącu",
  csv:"Eksport CSV — ten miesiąc",csvAll:"Eksport CSV — całe archiwum",
  csvOk:"Plik {f} pobrany",csvNone:"Nie ma czego eksportować",
- hDay:"dzienna",hNight:"nocna",hObc:"obciągi",hStr:"straty",
+ hDay:"dzienna",hNight:"nocna",hObc:"obciągi",hStr:"straty",hKon:"brak zlecenia",
  notifT:"Powiadomienia",notifOn:"Włącz powiadomienia",notifOff:"Wyłącz powiadomienia",
  notifLead:"Ile minut przed podmianą",notifOkMsg:"Powiadomienia włączone",
  notifDenied:"Telefon zablokował powiadomienia — odblokuj je dla tej aplikacji w ustawieniach systemu",
@@ -575,7 +585,9 @@ const T={pl:{
  doff:"Next doffing",doffBtn:"Doffing done",at:"at {t}",late:"Overdue by {t}",doffOk:"Doffing logged",
  nwDoff:"Packages from this doffing",cycTh:"Cycle per order sheet",cycRe:"Measured cycle",dwDoff:"Downtime since doffing",
  run:"Production",stopped:"Stopped",stOdpad:"Waste — re-threading",stAwaria:"Breakdown — yarn to waste",
- stProba:"Trial — new article",
+ stProba:"Trial — new article",stKoniec:"Production finished — no order",
+ btnKoniec:"Production finished",konShift:"No order this shift",
+ konFlag:"The order is finished and the machine is waiting. Start the next one with \u201eStart production\u201d.",
  btnOdpad:"Break → waste",btnAwaria:"Breakdown",btnStop:"Stop",btnProba:"Trial",
  btnStart:"Start production — new order",btnResume:"Machine started — same order",
  startAsk:"Start production means a new order or a new yarn type. The load counter returns to 0 and the first load will be scrapped. Continue?",
@@ -651,6 +663,8 @@ const T={pl:{
  set:"Machine settings",pos:"Packages per doffing",palN:"Pallet size",kgnet:"Package net weight (kg)",
  tube:"Tube weight (kg)",sh1:"Day shift starts",gross:"Gross package (kg)",
  kghint:"Package weight changes with the article — check it on every new order.",
+ dbT:"Report database",dbUse:"Space used",dbIdb:"IndexedDB · {n} shifts",
+ dbLs:"Browser storage · {n} shifts",dbPersist:" · persistent",
  logT:"Recent doffings",clearLog:"Clear doffing history",logAsk:"Delete doffing history?",
  exp:"Export data",imp:"Import data",copied:"Copied to clipboard",
  impAsk:"Paste exported data:",impOk:"Loaded",impBad:"Invalid data",nd:"no data",d:"d",
@@ -667,7 +681,7 @@ const T={pl:{
  histEmpty:"No shifts recorded this month",
  csv:"Export CSV — this month",csvAll:"Export CSV — whole archive",
  csvOk:"{f} downloaded",csvNone:"Nothing to export",
- hDay:"day",hNight:"night",hObc:"loads",hStr:"lost",
+ hDay:"day",hNight:"night",hObc:"loads",hStr:"lost",hKon:"no order",
  notifT:"Notifications",notifOn:"Turn notifications on",notifOff:"Turn notifications off",
  notifLead:"Minutes before doffing",notifOkMsg:"Notifications on",
  notifDenied:"The phone blocked notifications — allow them for this app in system settings",
@@ -695,7 +709,7 @@ LINES.forEach(l=>{const d=DEF(),s=SEED[l.id]||{},o=db[l.id]||{};
     stock:migG(o.stock,kn),shift:migG(o.shift||o.cnt,kn),
     shB:{zryw:0,wlok:0,...(o.shB||{})},log:o.log||[],events:o.events||[],
     state:o.state||(o.stopAt?"stop":"run"),stateSince:o.stateSince||o.stopAt||Date.now(),
-    obciag:o.obciag||0,utyl:{n:0,kg:0,...(o.utyl||{})},spd:o.spd||(s.spd||0),
+    konShift:o.konShift||0,obciag:o.obciag||0,utyl:{n:0,kg:0,...(o.utyl||{})},spd:o.spd||(s.spd||0),
     zrywCycle:o.zrywCycle||0,zrywPosMs:o.zrywPosMs||0,zrywSince:o.zrywSince||Date.now(),
     zrywPkg:o.zrywPkg||[],launched:o.launched||l.pos,shiftDoffs:o.shiftDoffs||0,
     firstDoff:o.firstDoff||0,zrywPos:o.zrywPos||[],zrywCycPos:o.zrywCycPos||[],
@@ -709,20 +723,99 @@ const HOUR=3600000, SHIFT_H=12;
 /* ---------- archiwum raportów zmianowych ----------
    Trzymane w osobnych kluczach po miesiącach, żeby zapis jednej zmiany nie przepisywał
    całego roku. Starsze niż 13 miesięcy kasujemy przy każdym przewinięciu zmiany. */
-const HK=ym=>"ex3_h_"+ym;
 const ymOf=ts=>{const d=new Date(ts);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");};
-function histLoad(ym){try{return JSON.parse(store.get(HK(ym))||"[]");}catch(e){return[];}}
-function histSave(ym,a){try{store.set(HK(ym),JSON.stringify(a));return true;}catch(e){return false;}}
-function histMonths(){const out=[];const now=new Date();
-  for(let i=0;i<14;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,1);
-    const ym=ymOf(d.getTime());if(histLoad(ym).length)out.push(ym);}
+
+/* ---------- baza raportow ----------
+   localStorage ma okolo 5 MB na caly origin i trzyma wszystko jako tekst — rok raportow
+   z dziennikiem juz sie tam ledwo miescil. Archiwum idzie wiec do IndexedDB: to prawdziwa
+   baza w telefonie, liczona w setkach megabajtow, z indeksami i bez przepisywania calosci
+   przy kazdym zapisie. Biezacy stan maszyn zostaje w localStorage — jest maly i czytany
+   synchronicznie przy starcie. Gdyby IndexedDB nie bylo, wszystko wraca na stary tor. */
+const IDB=(function(){
+  var dbp=null, ok=(typeof indexedDB!=="undefined");
+  function open(){
+    if(dbp)return dbp;
+    dbp=new Promise(function(res,rej){
+      var r=indexedDB.open("ekstruzja",1);
+      r.onupgradeneeded=function(e){var d=e.target.result;
+        if(!d.objectStoreNames.contains("shifts")){
+          var st=d.createObjectStore("shifts",{keyPath:"k"});
+          st.createIndex("ym","ym",{unique:false});
+          st.createIndex("t","t",{unique:false});}};
+      r.onsuccess=function(){res(r.result);};
+      r.onerror=function(){rej(r.error);};});
+    return dbp;}
+  function tx(mode,fn){return open().then(function(d){return new Promise(function(res,rej){
+    var t=d.transaction("shifts",mode),st=t.objectStore("shifts"),req=fn(st);
+    t.oncomplete=function(){res(req&&"result" in req?req.result:req);};
+    t.onerror=function(){rej(t.error);};});});}
+  return{ok:ok,
+    put:function(r){return tx("readwrite",function(st){return st.put(r);});},
+    byMonth:function(ym){return tx("readonly",function(st){return st.index("ym").getAll(ym);});},
+    all:function(){return tx("readonly",function(st){return st.getAll();});},
+    count:function(){return tx("readonly",function(st){return st.count();});},
+    delBefore:function(ts){return tx("readwrite",function(st){
+      var c=st.index("t").openCursor(IDBKeyRange.upperBound(ts));
+      c.onsuccess=function(e){var cur=e.target.result;if(cur){cur.delete();cur.continue();}};
+      return null;});}};})();
+
+var HCOUNT=0, HISTM=[], DBUSE="–", DBPERS=false;
+function dbStat(){
+  if(navigator.storage&&navigator.storage.estimate)
+    navigator.storage.estimate().then(function(e){
+      var mb=function(b){return (b/1048576).toFixed(b>10485760?0:1)+" MB";};
+      DBUSE=mb(e.usage||0)+" / "+mb(e.quota||0);});
+  if(navigator.storage&&navigator.storage.persisted)
+    navigator.storage.persisted().then(function(v){DBPERS=!!v;});}
+setInterval(dbStat,60000);dbStat();
+const HIST={
+  ok:IDB.ok,
+  push:function(rec){
+    rec.k=rec.t+"_"+rec.m;rec.ym=ymOf(rec.t);
+    if(IDB.ok)return IDB.put(rec).then(function(){HCOUNT++;}).catch(function(){lsPush(rec);});
+    lsPush(rec);return Promise.resolve();},
+  byMonth:function(ym){
+    if(IDB.ok)return IDB.byMonth(ym).catch(function(){return lsLoad(ym);});
+    return Promise.resolve(lsLoad(ym));},
+  all:function(){
+    if(IDB.ok)return IDB.all().catch(function(){return lsAll();});
+    return Promise.resolve(lsAll());},
+  months:function(){
+    return this.all().then(function(a){
+      var m={};a.forEach(function(r){m[r.ym||ymOf(r.t)]=1;});
+      return Object.keys(m).sort().reverse();});},
+  prune:function(){
+    var cut=new Date();cut.setMonth(cut.getMonth()-13);
+    if(IDB.ok)IDB.delBefore(cut.getTime()).catch(function(){});},
+  refresh:function(){
+    var self=this;
+    return this.all().then(function(a){HCOUNT=a.length;
+      var m={};a.forEach(function(r){m[r.ym||ymOf(r.t)]=1;});
+      HISTM=Object.keys(m).sort().reverse();return a;}).catch(function(){return[];});}};
+
+/* zapasowy tor na localStorage — uzywany tylko wtedy, gdy IndexedDB zawiedzie */
+const HK=function(ym){return "ex3_h_"+ym;};
+function lsLoad(ym){try{return JSON.parse(store.get(HK(ym))||"[]");}catch(e){return[];}}
+function lsPush(rec){var ym=rec.ym||ymOf(rec.t),a=lsLoad(ym);
+  if(a.some(function(x){return x.t===rec.t&&x.m===rec.m;}))return;
+  a.push(rec);try{store.set(HK(ym),JSON.stringify(a));}catch(e){}}
+function lsAll(){var out=[],now=new Date();
+  for(var i=0;i<14;i++){var d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    out=out.concat(lsLoad(ymOf(d.getTime())));}
   return out;}
-function histPrune(){const cut=new Date();cut.setMonth(cut.getMonth()-13);
-  for(let i=14;i<40;i++){const d=new Date(cut.getFullYear(),cut.getMonth()-(i-13),1);
-    const k=HK(ymOf(d.getTime()));if(store.get(k))store.set(k,"[]");}}
-function histPush(rec){const ym=ymOf(rec.t),a=histLoad(ym);
-  if(a.some(x=>x.t===rec.t&&x.m===rec.m))return;      /* bez duplikatów */
-  a.push(rec);histSave(ym,a);}
+
+/* jednorazowe przeniesienie tego, co juz lezy w localStorage */
+function histMigrate(){
+  if(!IDB.ok||store.get("ex3_h_moved")==="1")return Promise.resolve();
+  var old=lsAll();
+  if(!old.length){store.set("ex3_h_moved","1");return Promise.resolve();}
+  return Promise.all(old.map(function(r){
+    r.k=r.t+"_"+r.m;r.ym=r.ym||ymOf(r.t);return IDB.put(r);}))
+    .then(function(){var now=new Date();
+      for(var i=0;i<14;i++){var d=new Date(now.getFullYear(),now.getMonth()-i,1);
+        store.set(HK(ymOf(d.getTime())),"[]");}
+      store.set("ex3_h_moved","1");})
+    .catch(function(){});}
 
 /* zamknięcie zmiany: zapisujemy to, co faktycznie zdjęto, a nie prognozy */
 function closeShift(id){const d=db[id],start=parseInt(d.shKey,10);
@@ -730,14 +823,14 @@ function closeShift(id){const d=db[id],start=parseInt(d.shKey,10);
   const tally=gN(d.shift)+d.utyl.n+d.zrywShift+d.wlokShift+(d.dwShift||0)+(d.odpShift||0);
   if(!tally)return;                                    /* pusta zmiana — nie zaśmiecamy */
   const straty=kghOne(id)*(d.odpShift||0)/HOUR+perPos(id)*(d.zrywPosMs||0)/HOUR;
-  histPush({t:start,n:new Date(start).getHours()===((d.cfg.sh+12)%24)?1:0,
+  HIST.push({t:start,n:new Date(start).getHours()===((d.cfg.sh+12)%24)?1:0,
     m:id,o:d.ord.nr||"",lot:d.ord.lot||"",ob:d.shiftDoffs||0,
     a1:[d.shift.a1.n,+d.shift.a1.kg.toFixed(2)],
     a2:[d.shift.a2.n,+d.shift.a2.kg.toFixed(2)],
     b:[d.shift.b.n,+d.shift.b.kg.toFixed(2)],
     u:[d.utyl.n,+d.utyl.kg.toFixed(2)],
     z:d.zrywShift||0,w:d.wlokShift||0,
-    odp:Math.round((d.odpShift||0)/60000),
+    odp:Math.round((d.odpShift||0)/60000),kon:Math.round((d.konShift||0)/60000),
     stp:Math.round(Math.max(0,(d.dwShift||0)-(d.odpShift||0))/60000),
     str:+straty.toFixed(2),
     j:(d.journal||[]).map(function(e){return [Math.round((e.t-start)/60000),e.k,e.p||0,e.n||0,
@@ -752,11 +845,11 @@ function rollShift(){const now=Date.now();
   LINES.forEach(l=>{const d=db[l.id],sb=bounds(l.id,now),key=String(sb.start);
     if(d.shKey!==key){
       if(d.shKey)closeShift(l.id);                     /* archiwum przed zerowaniem */
-      d.shKey=key;d.dwShift=0;d.odpShift=0;d.zrywShift=0;d.wlokShift=0;d.shiftDoffs=0;d.firstDoff=0;
+      d.shKey=key;d.dwShift=0;d.odpShift=0;d.konShift=0;d.zrywShift=0;d.wlokShift=0;d.shiftDoffs=0;d.firstDoff=0;
       d.labSet=null;d.shift=mkG();d.shB={zryw:0,wlok:0};d.events=[];d.utyl={n:0,kg:0};
       d.zrywPosMs=0;d.zrywSince=now;d.journal=[];
       d.zrywPos=[];d.zrywCycPos=[];d.wlokPos=[];d.zrywKgPos={};}});
-  if(Math.random()<0.05)histPrune();}
+  if(Math.random()<0.02)HIST.prune();}
 /* obciąg trafia do laboratorium rano po nocce, a lab nie pracuje w sobotę i niedzielę,
    więc oddajemy w noce zaczynające się w niedzielę, poniedziałek, wtorek, środę i czwartek */
 function labAuto(id){const sb=bounds(id,Date.now());if(!sb.night)return false;
@@ -766,7 +859,7 @@ const labOn=id=>db[id].labSet===null?labAuto(id):!!db[id].labSet;
 /* ---------- dziennik zmiany ----------
    Każde zdarzenie ma godzinę. Stany (postój, awaria, odpad, próba) dostają czas trwania
    dopiero w chwili zakończenia, czyli przy następnej zmianie stanu. */
-const STATEK=["odpad","awaria","stop","proba"];
+const STATEK=["odpad","awaria","stop","proba","koniec"];
 function jrn(id,k,o){const d=db[id];
   if(!Array.isArray(d.journal))d.journal=[];
   d.journal.push(Object.assign({t:Date.now(),k:k},o||{}));
@@ -799,6 +892,8 @@ const kghEff=id=>perPos(id)*windPos(id);
 const cycleTh=id=>{const p=perPos(id);return p>0?db[id].cfg.kgNet/p:0;};
 const LT=e=>typeof e==="number"?e:e.t, LD=e=>typeof e==="number"?0:(e.d||0);
 const RUNS=["run","proba"];                 /* nawija na nawoje */
+/* koniec — zlecenie skończone, nowego jeszcze nie ma; maszyna stoi, ale nic nie leci w odpad,
+   więc liczy się osobno od postoju technicznego */
 const WASTE=["odpad","awaria"];             /* nitka leci w odpad */
 const paused=id=>!RUNS.includes(db[id].state);
 const counts=id=>db[id].state==="run";      /* próba nie wchodzi do produkcji */
@@ -901,7 +996,7 @@ function buildDrawer(){const box=$("dlist");box.innerHTML="";
   hv.setAttribute("aria-current",String(view==="hist"));
   hv.innerHTML='<i></i><div><b></b><em></em></div>';
   hv.querySelector("b").textContent=t("hist");
-  hv.querySelector("em").textContent=histMonths().reduce((a,m)=>a+histLoad(m).length,0)+" szt";
+  hv.querySelector("em").textContent=HCOUNT+" szt";
   hv.onclick=()=>{view="hist";render();drawer(false);};
   box.appendChild(hv);
   let g="";
@@ -912,7 +1007,7 @@ function buildDrawer(){const box=$("dlist");box.innerHTML="";
     b.innerHTML='<i></i><div><b></b><em></em></div>';
     b.querySelector("b").textContent=l.name;
     b.querySelector("em").textContent=(d.state!=="run"?"■ "+t(
-      {proba:"stProba",odpad:"stOdpad",awaria:"stAwaria",stop:"stopped"}[d.state])+" · ":"")+
+      {proba:"stProba",odpad:"stOdpad",awaria:"stAwaria",stop:"stopped",koniec:"stKoniec"}[d.state])+" · ":"")+
       (d.zryw?"⚠ "+d.zryw+" · ":"")+(d.wlok?"◆ "+d.wlok+" · ":"")+
       gN(d.stock)+" szt";
     if(d.state==="odpad"||d.state==="proba")b.querySelector("i").style.background="var(--amber)";
@@ -936,7 +1031,7 @@ const LBL={t_doff:"doff",t_nwDoff:"nwDoff",t_cycTh:"cycTh",t_cycRe:"cycRe",t_dwD
  t_ord:"ord",t_onr:"onr",t_olot:"olot",t_oidx:"oidx",t_okg:"okg",t_okgh:"okgh",t_odl:"odl",
  t_opack:"opack",t_oun:"oun",t_packIn:"packIn",t_omade:"omade",t_oleft:"oleft",t_oend:"oend",t_osh:"osh",t_pair:"pair",
  t_set:"set",t_pos:"pos",t_palN:"palN",t_kgnet:"kgnet",t_tube:"tube",t_sh1:"sh1",t_gross:"gross",
- t_kghint:"kghint",t_labT:"labT",t_labGrade:"labGrade",t_stockT:"stockT",t_palT:"palT",
+ t_kghint:"kghint",t_dbT:"dbT",t_dbUse:"dbUse",t_labT:"labT",t_labGrade:"labGrade",t_stockT:"stockT",t_palT:"palT",
  t_notifT:"notifT",t_notifLead:"notifLead",
  t_histT:"histT",t_histMonth:"histMonth",t_histList:"histList",
  t_schedT:"schedT",t_firstT:"firstT"};
@@ -944,7 +1039,8 @@ function applyLang(){document.documentElement.lang=lang;
   for(const i in LBL){const e=$(i);if(e)e.textContent=t(LBL[i]);}
   $("btnDoff").textContent=t("doffBtn");$("btnReset").textContent=t("reset");
   $("dpSave").textContent=t("dpSave");$("dpCancel").textContent=t("dpCancel");
-  ["btnOdpad","btnAwaria","btnStop","btnProba","btnStart","btnResume"].forEach(b=>$(b).textContent=t(b));
+  ["btnOdpad","btnAwaria","btnStop","btnProba","btnKoniec","btnStart","btnResume"]
+    .forEach(b=>$(b).textContent=t(b));
   $("odpNote").textContent=t("odpNote");$("notifNote").textContent=t("notifNote");
   $("btnNotif").textContent=NOTIF.on?t("notifOff"):t("notifOn");
   $("btnNoDoff").textContent=t("noDoff");$("jrnNote").textContent=t("jrnNote");
@@ -1073,15 +1169,17 @@ $("dpSave").onclick=()=>{const d=S(),n=Date.now(),kn=d.cfg.kgNet,a1=dpA1();
   jrn(cur,"obc",{n:d.obciag,a:"A1 "+a1+" · A2 "+DP.a2+" · B "+bN+(scrap?" → utylizacja":"")});
   d.doffStart=n;d.dwDoff=0;d.zrywPos=[];d.zrywCycPos=[];d.wlokPos=[];d.zrywKgPos={};syncZ(cur);
   d.launched=POS(cur);d.notifDoff=0;d.notifPal=0;
-  if(d.state!=="run"){const dt=n-d.stateSince;d.dwShift+=dt;
-    if(d.state==="odpad")d.odpShift+=dt;d.stateSince=n;}
+  if(RUNS.indexOf(d.state)<0){const dt=n-d.stateSince;d.dwShift+=dt;
+    if(WASTE.indexOf(d.state)>=0)d.odpShift+=dt;
+    if(d.state==="koniec")d.konShift+=dt;d.stateSince=n;}
   $("doffPanel").hidden=true;save();render();
   toast(scrap?t("utylOk",{n:a1+DP.a2+bN}):t("dpDone",{n:a1+DP.a2+bN}));};
 $("btnDoff").onclick=openDP;
 function setState(ns){const d=S(),n=Date.now();flushZryw(cur);
-  if(d.state!=="run"){const dt=n-d.stateSince;       /* zamykamy poprzednią przerwę */
+  if(RUNS.indexOf(d.state)<0){const dt=n-d.stateSince;   /* zamykamy poprzednią przerwę */
     d.dwDoff+=dt;d.dwShift+=dt;
-    if(d.state==="odpad")d.odpShift+=dt;}
+    if(WASTE.indexOf(d.state)>=0)d.odpShift+=dt;         /* odpad i awaria */
+    if(d.state==="koniec")d.konShift+=dt;}
   jrnClose(cur);                                  /* domykamy czas trwania poprzedniego stanu */
   d.state=ns;d.stateSince=n;
   jrn(cur,ns==="run"?"run":ns);
@@ -1091,6 +1189,7 @@ $("btnOdpad").onclick=()=>setState("odpad");
 $("btnAwaria").onclick=()=>setState("awaria");
 $("btnStop").onclick=()=>setState("stop");
 $("btnProba").onclick=()=>setState("proba");
+$("btnKoniec").onclick=()=>setState("koniec");
 /* Start produkcji = nowe zlecenie / nowy typ nitki. Obciąg wraca na 0, cykl liczy się od nowa. */
 $("btnStart").onclick=()=>{if(!confirm(t("startAsk")))return;
   const d=S();flushZryw(cur);
@@ -1224,7 +1323,7 @@ function paint(){
 
   const cTh=cycleTh(cur),cRe=cycleRe(cur),kRe=kghRe(cur),cUse=cRe>0?cRe:cTh;
   const dwD=downNow(cur),stopped=paused(cur),card=$("doffCard");
-  const ST={run:"run",proba:"stProba",odpad:"stOdpad",awaria:"stAwaria",stop:"stopped"};
+  const ST={run:"run",proba:"stProba",odpad:"stOdpad",awaria:"stAwaria",stop:"stopped",koniec:"stKoniec"};
   const stName=t(ST[d.state]||"run");
   if(cUse>0){const next=d.doffStart+cUse*HOUR+dwD,left=next-now;
     $("cd").textContent=hms(Math.abs(left));
@@ -1234,18 +1333,20 @@ function paint(){
   card.classList.toggle("stop",stopped);
   const col=d.state==="run"?["var(--ok)","var(--ok-bg)"]
           :(d.state==="proba"||d.state==="odpad")?["var(--amber)","var(--amber-bg)"]
+          :d.state==="koniec"?["var(--blue)","#E6EEF7"]
           :["var(--bad)","var(--bad-bg)"];
   $("dot").style.background=col[0];$("dot").style.boxShadow="0 0 0 4px "+col[1];
   $("stText").innerHTML=stName+'<em id="stSub"></em>';
   $("stSub").textContent=stopped?t("stopSince",{t:clk(d.stateSince),d:hm(now-d.stateSince)}):"";
   $("btnResume").hidden=!stopped;
-  [["btnOdpad","odpad"],["btnAwaria","awaria"],["btnStop","stop"],["btnProba","proba"]]
-    .forEach(([b,st])=>$(b).classList.toggle("back",d.state===st));
+  [["btnOdpad","odpad"],["btnAwaria","awaria"],["btnStop","stop"],["btnProba","proba"],
+   ["btnKoniec","koniec"]].forEach(([b,st])=>$(b).classList.toggle("back",d.state===st));
   $("vNwDoff").textContent=LAUNCH(cur)+" szt";
   const scrap=(d.obciag===0)||(d.state==="proba");
   $("vObc").textContent=d.obciag===0?"0":d.obciag;
   const of=$("obcFlag");of.hidden=!scrap;
   if(scrap){of.className="flag warn";of.textContent=d.state==="proba"?t("probaFlag"):t("obc0");}
+  if(d.state==="koniec"){of.hidden=false;of.className="flag n";of.textContent=t("konFlag");}
   const pn=palletAfterDoff(cur),pf=$("palNextFlag");pf.hidden=!pn;
   if(pn){pf.className="flag ok";pf.textContent=t("palNext",{g:pn.g,n:pn.n,norm:pn.norm});}
   $("vCycTh").textContent=cTh>0?hm(cTh*HOUR):"–";
@@ -1288,9 +1389,10 @@ function paint(){
   $("vKghR").textContent=kRe?n1(kRe)+" kg/h":"–";
   $("vKgShift").textContent=kUse?n0(kUse*SHIFT_H)+" kg":"–";
   $("vNwShift").textContent=(kUse&&c.kgNet)?n1(kUse*SHIFT_H/c.kgNet):"–";
-  const dwS=downShift(cur),od=odpadMs(cur);
+  const dwS=downShift(cur),od=odpadMs(cur),kn=konMs(cur);
   $("vOdpShift").textContent=od?hm(od):"–";
-  $("vDwShift").textContent=dwS-od>0?hm(dwS-od):"–";
+  $("vKonShift").textContent=kn?hm(kn):"–";
+  $("vDwShift").textContent=dwS-od-kn>0?hm(dwS-od-kn):"–";
   /* stracone kilogramy trzeba domotać — pokazujemy, o ile to przeciąga zlecenie */
   const lf=$("lossFlag");lf.hidden=!(bal.lost>0.05);
   if(!lf.hidden){const r=windKgh(cur)||feedKgh(cur);
@@ -1305,7 +1407,7 @@ function paint(){
   eb.innerHTML=ev.length?'<div class="hint" style="margin:12px 0 2px">'+t("evT")+"</div>":"";
   ev.forEach((e,i)=>{const nx=d.events[d.events.length-i];
     const dur=(nx?nx.t:now)-e.t,row=document.createElement("div");row.className="log";
-    const EV={run:"evRun",proba:"stProba",odpad:"evOdpad",awaria:"stAwaria",stop:"evStop"};
+    const EV={run:"evRun",proba:"stProba",odpad:"evOdpad",awaria:"stAwaria",stop:"evStop",koniec:"stKoniec"};
     row.innerHTML="<span>"+clk(e.t)+" "+t(EV[e.s]||"evRun")+
       "</span><span>"+hm(dur)+"</span>";eb.appendChild(row);});
 
@@ -1362,6 +1464,8 @@ function paint(){
   $("srcNote").textContent=rate>0?(anyRe?t("srcRe",{n:nLog}):t("srcZl")):"";
 
   $("sGross").value=n1(c.kgNet+c.kgTube)+" kg";
+  $("vDb").textContent=t(HIST.ok?"dbIdb":"dbLs",{n:HCOUNT})+(DBPERS?t("dbPersist"):"");
+  $("vDbUse").textContent=DBUSE;
   paintJrn();
   const L=d.log.slice(-6).reverse(),lb=$("logBox");
   lb.innerHTML=L.length?'<div class="hint" style="margin:8px 0 2px">'+t("logT")+"</div>":"";
@@ -1370,7 +1474,7 @@ function paint(){
 }
 
 /* ---------- dziennik: render ---------- */
-const JL={obc:"jObc",noobc:"jNoObc",zryw:"jZryw",zrywOff:"jZrywOff",wlok:"jWlok",wlokOff:"jWlokOff",
+const JL={koniec:"stKoniec",obc:"jObc",noobc:"jNoObc",zryw:"jZryw",zrywOff:"jZrywOff",wlok:"jWlok",wlokOff:"jWlokOff",
   run:"jRun",start:"jStart",first:"jFirst",launch:"jLaunch",
   odpad:"stOdpad",awaria:"stAwaria",stop:"stopped",proba:"stProba"};
 function paintJrn(){const d=S(),box=$("jrnBox");box.innerHTML="";
@@ -1553,11 +1657,11 @@ function paintDoffs(full){
 /* ---------- raporty ---------- */
 const CSVH=["Data","Zmiana","Maszyna","Zlecenie","Lot","Obciagi",
  "A1 szt","A1 kg","A2 szt","A2 kg","B szt","B kg","Utyl szt","Utyl kg",
- "Zrywy","Wlokienka","Straty kg","Odpad min","Postoj min"];
+ "Zrywy","Wlokienka","Straty kg","Odpad min","Brak zlecenia min","Postoj min"];
 const csvRow=r=>[new Date(r.t).toLocaleDateString("pl-PL"),r.n?"noc":"dzien",
   L_(r.m)?L_(r.m).name:r.m,r.o,r.lot||"",r.ob,
   r.a1[0],r.a1[1],r.a2[0],r.a2[1],r.b[0],r.b[1],r.u[0],r.u[1],
-  r.z,r.w,r.str,r.odp,r.stp];
+  r.z,r.w,r.str,r.odp,r.kon||0,r.stp];
 function download(name,text){
   try{const b=new Blob(["\ufeff"+text],{type:"text/csv;charset=utf-8"});
     const u=URL.createObjectURL(b),a=document.createElement("a");
@@ -1567,23 +1671,28 @@ function download(name,text){
   catch(e){prompt(name,text);}}
 function toCsv(rows){
   return [CSVH.join(";")].concat(rows.map(r=>csvRow(r).join(";"))).join("\n");}
-$("btnCsv").onclick=()=>{const ym=$("histMonth").value,rows=histLoad(ym);
+$("btnCsv").onclick=()=>{const ym=$("histMonth").value;
+  HIST.byMonth(ym).then(rows=>{if(!rows.length){toast(t("csvNone"));return;}
+    download("ekstruzja-"+ym+".csv",toCsv(rows.slice().sort((a,b)=>a.t-b.t)));});};
+$("btnCsvAll").onclick=()=>{HIST.all().then(rows=>{
   if(!rows.length){toast(t("csvNone"));return;}
-  download("ekstruzja-"+ym+".csv",toCsv(rows.slice().sort((a,b)=>a.t-b.t)));};
-$("btnCsvAll").onclick=()=>{let rows=[];histMonths().forEach(m=>{rows=rows.concat(histLoad(m));});
-  if(!rows.length){toast(t("csvNone"));return;}
-  download("ekstruzja-archiwum.csv",toCsv(rows.sort((a,b)=>a.t-b.t)));};
+  download("ekstruzja-archiwum.csv",toCsv(rows.sort((a,b)=>a.t-b.t)));});};
 $("histMonth").onchange=()=>paintHist(true);
 
 function paintHist(keep){
   rollShift();
   $("hLine").textContent=t("histT");$("hSub").textContent="";
-  const ms=histMonths(),sel=$("histMonth");
-  if(!keep){const cur0=sel.value;sel.innerHTML="";
-    (ms.length?ms:[ymOf(Date.now())]).forEach(m=>{const o=document.createElement("option");
-      o.value=m;o.textContent=m;sel.appendChild(o);});
-    if(cur0&&ms.includes(cur0))sel.value=cur0;}
-  const rows=histLoad(sel.value).slice().sort((a,b)=>b.t-a.t);
+  HIST.refresh().then(function(){
+    const sel=$("histMonth");
+    if(!keep){const prev=sel.value;sel.innerHTML="";
+      (HISTM.length?HISTM:[ymOf(Date.now())]).forEach(function(m){
+        const o=document.createElement("option");o.value=m;o.textContent=m;sel.appendChild(o);});
+      if(prev&&HISTM.indexOf(prev)>=0)sel.value=prev;}
+    return HIST.byMonth(sel.value);
+  }).then(function(r){renderHist(r.slice().sort(function(a,b){return b.t-a.t;}));})
+   .catch(function(){renderHist([]);});}
+
+function renderHist(rows){
   const sum=rows.reduce((a,r)=>({ob:a.ob+r.ob,n:a.n+r.a1[0]+r.a2[0]+r.b[0],
     kg:a.kg+r.a1[1]+r.a2[1]+r.b[1],u:a.u+r.u[0],z:a.z+r.z,w:a.w+r.w,str:a.str+r.str}),
     {ob:0,n:0,kg:0,u:0,z:0,w:0,str:0});
@@ -1597,7 +1706,8 @@ function paintHist(keep){
     "<div>"+t("sum")+"</div><div class='num big'>"+sum.n+" szt · "+n1(sum.kg)+" kg</div>"+
     "<div>"+t("utyl")+"</div><div class='num'>"+sum.u+" szt · "+n1(per.uk)+" kg</div>"+
     "<div>"+t("zryw")+"</div><div class='num'>"+sum.z+" / "+sum.w+"</div>"+
-    "<div>"+t("hStr")+"</div><div class='num'>"+n1(sum.str)+" kg</div>";
+    "<div>"+t("hStr")+"</div><div class='num'>"+n1(sum.str)+" kg</div>"+
+    "<div>"+t("hKon")+"</div><div class='num'>"+(sum.kon?hm(sum.kon*60000):"–")+"</div>";
   /* to samo w rozbiciu na maszyny — jedna suma nie mówi, która linia ciągnie w dół */
   const mb=$("histMachBox");mb.innerHTML="";
   LINES.forEach(function(l){
@@ -1641,6 +1751,10 @@ function render(){
   else if(view==="doffs")paintDoffs(true);
   else paintHist();
   buildDrawer();}
+/* Prosimy Androida, zeby nie kasowal danych przy braku miejsca. Dla zainstalowanej
+   aplikacji zgoda jest zwykle przyznawana automatycznie. */
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});
+histMigrate().then(function(){return HIST.refresh();}).then(function(){buildDrawer();});
 applyLang();loadInputs();render();
 setInterval(()=>{if(view==="line")paint();else if(view==="doffs")paintDoffs(false);},1000);
 if("serviceWorker" in navigator&&location.protocol.startsWith("http")){navigator.serviceWorker.register("./sw.js").catch(()=>{});}
