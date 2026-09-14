@@ -89,6 +89,16 @@
   .tag.b{background:var(--amber-bg);border-color:#E8C98C;color:#8A5A06}
   .cnt .pc{flex:1;font-size:.8rem;color:var(--dim)}
   .cnt .v{width:52px;text-align:center;font-size:1.35rem;font-weight:700}
+  .poz{margin:10px 0 2px}
+  .poz>span{display:block;font-size:.8rem;color:var(--dim);margin-bottom:6px}
+  .pozRow{display:flex;flex-wrap:wrap;gap:6px}
+  .pz{width:40px;height:40px;border:1px solid var(--edge);border-radius:8px;background:#fff;
+      font-weight:650;font-size:.95rem;color:var(--dim)}
+  .pz:active{background:#F2F5F8}
+  .pz.zr{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
+  .pz.zrOld{background:#F6EAE9;border-color:#E0BDBA;color:#8A4642}
+  .pz.wl{background:var(--amber-bg);border-color:var(--amber);color:#8A5A06}
+  .pz.dim{opacity:.3}
   .step{width:44px;height:40px;border:1px solid var(--edge);border-radius:8px;font-size:1.3rem;color:var(--blue);background:#fff;display:grid;place-items:center;flex:0 0 auto}
   .step:active{background:#EDF3FA}
   label{display:block;margin-bottom:12px}
@@ -164,6 +174,7 @@
       <div class="flag n" id="obcFlag" hidden></div>
       <div class="flag n" id="palNextFlag" hidden></div>
       <button class="btn" id="btnDoff"></button>
+      <button class="btn ghost" id="btnNoDoff" style="margin-top:8px"></button>
       <div class="rows" style="margin-top:12px">
         <div id="t_obc"></div><div class="num" id="vObc">–</div>
         <div id="t_nwDoff"></div><div class="num" id="vNwDoff">–</div>
@@ -182,14 +193,8 @@
         <div class="v num" id="vLaunchSet">8</div>
         <button class="step" id="lPlus" aria-label="+1">+</button></div>
       <div class="hint" id="launchNote"></div>
-      <div class="cnt"><div class="pc" id="t_zrywNow"></div>
-        <button class="step" id="zMinus" aria-label="-1">−</button>
-        <div class="v num" id="vZryw">0</div>
-        <button class="step" id="zPlus" aria-label="+1">+</button></div>
-      <div class="cnt" style="border-bottom:0"><div class="pc" id="t_wlokNow"></div>
-        <button class="step" id="wMinus" aria-label="-1">−</button>
-        <div class="v num" id="vWlok">0</div>
-        <button class="step" id="wPlus" aria-label="+1">+</button></div>
+      <div class="poz"><span id="t_pozZryw"></span><div class="pozRow" id="rowZryw"></div></div>
+      <div class="poz"><span id="t_pozWlok"></span><div class="pozRow" id="rowWlok"></div></div>
       <div class="rows">
         <div id="t_launchedRow"></div><div class="num" id="vLaunched">–</div>
         <div id="t_windPos"></div><div class="num" id="vWindPos">–</div>
@@ -330,6 +335,12 @@
   </section>
 
   <section>
+    <h2 id="t_jrnT"></h2>
+    <div class="pad"><div id="jrnBox"></div>
+      <div class="hint" id="jrnNote" style="margin:10px 0 0"></div></div>
+  </section>
+
+  <section>
     <h2 id="t_notifT"></h2>
     <div class="pad">
       <button class="btn ghost" id="btnNotif" style="margin-top:0"></button>
@@ -382,6 +393,7 @@
       <div class="hint" id="histNote" style="margin:10px 0 0"></div>
     </div>
   </section>
+  <section><h2 id="t_histMach"></h2><div id="histMachBox"></div></section>
   <section><h2 id="t_histList"></h2><div id="histBox"></div></section>
 </div>
 
@@ -437,6 +449,7 @@ const DEF=()=>({cfg:{kgNet:3,kgTube:0.31,sh:6},
   ord:{nr:"",lot:"",idx:"",kg:0,kgh:0,pairKgh:1,dl:"",pack:0,packKg:0,packLog:[]},
   stock:mkG(),shift:mkG(),shB:{zryw:0,wlok:0},
   zryw:0,zrywCycle:0,zrywKg:0,zrywShift:0,zrywPosMs:0,zrywSince:Date.now(),zrywPkg:[],
+  zrywPos:[],zrywCycPos:[],wlokPos:[],zrywKgPos:{},journal:[],
   wlok:0,wlokShift:0,launched:0,labSet:null,
   state:"run",stateSince:Date.now(),odpShift:0,events:[],
   obciag:0,shiftDoffs:0,utyl:{n:0,kg:0},spd:0,firstDoff:0,
@@ -473,7 +486,16 @@ const T={pl:{
  odpShift:"Odpad na zmianie",odpKg:"Odpad w kg",
  odpNote:"Przy przewlekaniu nitka ze wszystkich pozycji leci w odpad, więc waga nawojów nie rośnie. Naciśnij „Maszyna puszczona” dokładnie w chwili startu.",
  evT:"Zdarzenia na zmianie",evRun:"Puszczona",evOdpad:"Odpad",evStop:"Postój",
- zryw:"Zrywy i włókienka",zrywNow:"Zerwane pozycje teraz",wlokNow:"Włókienko teraz",
+ zryw:"Zrywy i włókienka",pozZryw:"Zryw — dotknij pozycji",pozWlok:"Włókienko — dotknij pozycji",
+ noDoff:"Nie podmieniła",noDoffOk:"Zapisano: nie podmieniła",
+ jrnT:"Dziennik zmiany",jrnEmpty:"Jeszcze nic się nie wydarzyło",
+ jrnNote:"Wszystko z godziną. Postój, awaria i odpad dostają czas trwania w chwili puszczenia maszyny.",
+ jObc:"Podmiana nr {n} — {a}",jNoObc:"Nie podmieniła — obciąg {n}",
+ jZryw:"Zryw — pozycja {p}",jZrywOff:"Zryw odwołany — pozycja {p}",
+ jWlok:"Włókienko — pozycja {p}",jWlokOff:"Włókienko odwołane — pozycja {p}",
+ jRun:"Maszyna puszczona",jStart:"Start produkcji — nowe zlecenie",
+ jFirst:"Pierwsza podmiana {h}, obciąg {n}",jLaunch:"Puszczone pozycje: {n}",
+ obcNr:"Nr obciągu",histMach:"Podział na maszyny",zrywNow:"Zerwane pozycje teraz",wlokNow:"Włókienko teraz",
  effPos:"Pozycje z pełną wagą",zrywShift:"Zrywy na zmianie",wlokShift:"Włókienka na zmianie",
  zrywFlag:"Maszyna kręci {w} z {p} pozycji — nitka z {n} leci w odpad",zrywAll:"Wszystkie pozycje zerwane",
  zrywCyc:"{n} nawojów z tego cyklu pójdzie na B",
@@ -576,7 +598,16 @@ const T={pl:{
  odpShift:"Waste time this shift",odpKg:"Waste in kg",
  odpNote:"While re-threading, yarn from every position goes to waste, so package weight does not grow. Press \u201eMachine started\u201d at the exact moment of restart.",
  evT:"Events this shift",evRun:"Started",evOdpad:"Waste",evStop:"Stopped",
- zryw:"Breaks and filament faults",zrywNow:"Broken positions now",wlokNow:"Filament fault now",
+ zryw:"Breaks and filament faults",pozZryw:"Break — tap the position",pozWlok:"Filament fault — tap the position",
+ noDoff:"Did not doff",noDoffOk:"Logged: did not doff",
+ jrnT:"Shift journal",jrnEmpty:"Nothing has happened yet",
+ jrnNote:"Everything is timestamped. Stops, breakdowns and waste get their duration the moment the machine starts again.",
+ jObc:"Doffing no. {n} — {a}",jNoObc:"Did not doff — load {n}",
+ jZryw:"Break — position {p}",jZrywOff:"Break cleared — position {p}",
+ jWlok:"Filament fault — position {p}",jWlokOff:"Filament fault cleared — position {p}",
+ jRun:"Machine started",jStart:"Start production — new order",
+ jFirst:"First doffing {h}, load {n}",jLaunch:"Positions started: {n}",
+ obcNr:"Load no.",histMach:"By machine",zrywNow:"Broken positions now",wlokNow:"Filament fault now",
  effPos:"Positions at full weight",zrywShift:"Breaks this shift",wlokShift:"Filament faults this shift",
  zrywFlag:"Machine runs {w} of {p} positions — yarn from {n} goes to waste",zrywAll:"All positions broken",
  zrywCyc:"{n} packages from this cycle will go to B",
@@ -667,7 +698,8 @@ LINES.forEach(l=>{const d=DEF(),s=SEED[l.id]||{},o=db[l.id]||{};
     obciag:o.obciag||0,utyl:{n:0,kg:0,...(o.utyl||{})},spd:o.spd||(s.spd||0),
     zrywCycle:o.zrywCycle||0,zrywPosMs:o.zrywPosMs||0,zrywSince:o.zrywSince||Date.now(),
     zrywPkg:o.zrywPkg||[],launched:o.launched||l.pos,shiftDoffs:o.shiftDoffs||0,
-    firstDoff:o.firstDoff||0};});
+    firstDoff:o.firstDoff||0,zrywPos:o.zrywPos||[],zrywCycPos:o.zrywCycPos||[],
+    wlokPos:o.wlokPos||[],zrywKgPos:o.zrywKgPos||{},journal:o.journal||[]};});
 
 const t=(k,p)=>{let s=T[lang][k]||k;if(p)for(const n in p)s=s.split("{"+n+"}").join(p[n]);return s;};
 const save=()=>store.set("ex3_db",JSON.stringify(db));
@@ -707,7 +739,9 @@ function closeShift(id){const d=db[id],start=parseInt(d.shKey,10);
     z:d.zrywShift||0,w:d.wlokShift||0,
     odp:Math.round((d.odpShift||0)/60000),
     stp:Math.round(Math.max(0,(d.dwShift||0)-(d.odpShift||0))/60000),
-    str:+straty.toFixed(2)});}
+    str:+straty.toFixed(2),
+    j:(d.journal||[]).map(function(e){return [Math.round((e.t-start)/60000),e.k,e.p||0,e.n||0,
+      e.d?Math.round(e.d/60000):0];})});}
 
 /* ---------- shifts ---------- */
 function bounds(id,now){const d=db[id],a=d.cfg.sh,b=(a+12)%24,x=new Date(now),o=[];
@@ -720,13 +754,33 @@ function rollShift(){const now=Date.now();
       if(d.shKey)closeShift(l.id);                     /* archiwum przed zerowaniem */
       d.shKey=key;d.dwShift=0;d.odpShift=0;d.zrywShift=0;d.wlokShift=0;d.shiftDoffs=0;d.firstDoff=0;
       d.labSet=null;d.shift=mkG();d.shB={zryw:0,wlok:0};d.events=[];d.utyl={n:0,kg:0};
-      d.zrywPosMs=0;d.zrywSince=now;}});
+      d.zrywPosMs=0;d.zrywSince=now;d.journal=[];
+      d.zrywPos=[];d.zrywCycPos=[];d.wlokPos=[];d.zrywKgPos={};}});
   if(Math.random()<0.05)histPrune();}
 /* obciąg trafia do laboratorium rano po nocce, a lab nie pracuje w sobotę i niedzielę,
    więc oddajemy w noce zaczynające się w niedzielę, poniedziałek, wtorek, środę i czwartek */
 function labAuto(id){const sb=bounds(id,Date.now());if(!sb.night)return false;
   const w=new Date(sb.start).getDay();return w<=4;}
 const labOn=id=>db[id].labSet===null?labAuto(id):!!db[id].labSet;
+
+/* ---------- dziennik zmiany ----------
+   Każde zdarzenie ma godzinę. Stany (postój, awaria, odpad, próba) dostają czas trwania
+   dopiero w chwili zakończenia, czyli przy następnej zmianie stanu. */
+const STATEK=["odpad","awaria","stop","proba"];
+function jrn(id,k,o){const d=db[id];
+  if(!Array.isArray(d.journal))d.journal=[];
+  d.journal.push(Object.assign({t:Date.now(),k:k},o||{}));
+  if(d.journal.length>300)d.journal=d.journal.slice(-300);}
+function jrnClose(id){const d=db[id];if(!Array.isArray(d.journal))return;
+  for(let i=d.journal.length-1;i>=0;i--){const e=d.journal[i];
+    if(STATEK.indexOf(e.k)>=0&&e.d==null){e.d=Date.now()-e.t;return;}}}
+/* liczniki trzymamy zsynchronizowane z listami pozycji */
+function syncZ(id){const d=db[id];
+  d.zrywPos=d.zrywPos||[];d.zrywCycPos=d.zrywCycPos||[];d.wlokPos=d.wlokPos||[];
+  d.zryw=d.zrywPos.length;d.zrywCycle=d.zrywCycPos.length;d.wlok=d.wlokPos.length;
+  d.zrywPkg=d.zrywCycPos.map(function(x){return +(d.zrywKgPos[x]||0);});
+  d.zrywKg=+d.zrywPkg.reduce(function(a,b){return a+b;},0).toFixed(2);}
+LINES.forEach(function(l){syncZ(l.id);});
 
 /* ---------- rates ---------- */
 function kghOne(id){const o=db[id].ord,k=o.kgh||0;return(L_(id).pair&&o.pairKgh)?k/2:k;}
@@ -868,15 +922,16 @@ function buildDrawer(){const box=$("dlist");box.innerHTML="";
 
 /* ---------- labels ---------- */
 const LBL={t_doff:"doff",t_nwDoff:"nwDoff",t_cycTh:"cycTh",t_cycRe:"cycRe",t_dwDoff:"dwDoff",
- t_zryw:"zryw",t_zrywNow:"zrywNow",t_effPos:"effPos",t_zrywShift:"zrywShift",
+ t_zryw:"zryw",t_effPos:"effPos",t_zrywShift:"zrywShift",
  t_out:"out",t_kghr:"kghr",t_spr:"spr",t_kgshift:"kgshift",t_nwshift:"nwshift",
  t_dwShift:"dwShift",t_avail:"avail",t_odpShift:"odpShift",
  t_feed:"feed",t_wind:"wind",t_lossR:"lossR",t_wound:"wound",t_lost:"lost",
  t_lnHead:"lnHead",t_ospd:"ospd",t_obc:"obc",t_utyl:"utyl",
- t_windPos:"windPos",t_zrywCycle:"zrywCycle",t_launched:"launched",t_launchedRow:"launchedRow",t_hand:"hand",t_kgNow:"kgNow",t_kgEnd:"kgEnd",
+ t_windPos:"windPos",t_zrywCycle:"zrywCycle",t_pozZryw:"pozZryw",t_pozWlok:"pozWlok",
+ t_jrnT:"jrnT",t_histMach:"histMach",t_launched:"launched",t_launchedRow:"launchedRow",t_hand:"hand",t_kgNow:"kgNow",t_kgEnd:"kgEnd",
  t_doffLeft:"doffLeft",t_nwLeft:"nwLeft",t_pack:"pack",t_sum:"sum",t_kgsum:"kgsum",
  t_handNorm:"handNorm",t_hA1:"hA1",t_hBw:"hBw",t_hBz:"hBz",t_stockShift:"stockShift",t_zrywKg:"zrywKg",t_dpT:"dpT",t_dpA2kg:"dpA2kg",
- t_dpZrywKg:"dpZrywKg",t_dpWlokKg:"dpWlokKg",t_wlokNow:"wlokNow",t_wlokShift:"wlokShift",
+ t_dpZrywKg:"dpZrywKg",t_dpWlokKg:"dpWlokKg",t_wlokShift:"wlokShift",
  t_shA1:"shA1",t_shA2:"shA2",t_shB:"shB",t_shBwhy:"shBwhy",
  t_ord:"ord",t_onr:"onr",t_olot:"olot",t_oidx:"oidx",t_okg:"okg",t_okgh:"okgh",t_odl:"odl",
  t_opack:"opack",t_oun:"oun",t_packIn:"packIn",t_omade:"omade",t_oleft:"oleft",t_oend:"oend",t_osh:"osh",t_pair:"pair",
@@ -892,6 +947,7 @@ function applyLang(){document.documentElement.lang=lang;
   ["btnOdpad","btnAwaria","btnStop","btnProba","btnStart","btnResume"].forEach(b=>$(b).textContent=t(b));
   $("odpNote").textContent=t("odpNote");$("notifNote").textContent=t("notifNote");
   $("btnNotif").textContent=NOTIF.on?t("notifOff"):t("notifOn");
+  $("btnNoDoff").textContent=t("noDoff");$("jrnNote").textContent=t("jrnNote");
   $("btnScan").textContent=t("scan");$("scanNote").textContent=t("scanNote");
   $("btnPackAdd").textContent=t("packAdd");$("btnPackSet").textContent=t("packSet");
   $("btnPackUndo").textContent=t("packUndo");$("packHint").textContent=t("packNote");
@@ -1014,7 +1070,8 @@ $("dpSave").onclick=()=>{const d=S(),n=Date.now(),kn=d.cfg.kgNet,a1=dpA1();
        d.shB.zryw+=DP.zryw;d.shB.wlok+=DP.wlok;}
   d.obciag=(d.obciag||0)+1;d.shiftDoffs=(d.shiftDoffs||0)+1;
   d.log.push({t:n,d:downNow(cur)});if(d.log.length>24)d.log=d.log.slice(-24);
-  d.doffStart=n;d.dwDoff=0;d.zryw=0;d.zrywCycle=0;d.zrywKg=0;d.zrywPkg=[];d.wlok=0;
+  jrn(cur,"obc",{n:d.obciag,a:"A1 "+a1+" · A2 "+DP.a2+" · B "+bN+(scrap?" → utylizacja":"")});
+  d.doffStart=n;d.dwDoff=0;d.zrywPos=[];d.zrywCycPos=[];d.wlokPos=[];d.zrywKgPos={};syncZ(cur);
   d.launched=POS(cur);d.notifDoff=0;d.notifPal=0;
   if(d.state!=="run"){const dt=n-d.stateSince;d.dwShift+=dt;
     if(d.state==="odpad")d.odpShift+=dt;d.stateSince=n;}
@@ -1025,7 +1082,9 @@ function setState(ns){const d=S(),n=Date.now();flushZryw(cur);
   if(d.state!=="run"){const dt=n-d.stateSince;       /* zamykamy poprzednią przerwę */
     d.dwDoff+=dt;d.dwShift+=dt;
     if(d.state==="odpad")d.odpShift+=dt;}
+  jrnClose(cur);                                  /* domykamy czas trwania poprzedniego stanu */
   d.state=ns;d.stateSince=n;
+  jrn(cur,ns==="run"?"run":ns);
   d.events.push({t:n,s:ns});if(d.events.length>24)d.events=d.events.slice(-24);
   save();paint();buildDrawer();}
 $("btnOdpad").onclick=()=>setState("odpad");
@@ -1037,12 +1096,51 @@ $("btnStart").onclick=()=>{if(!confirm(t("startAsk")))return;
   const d=S();flushZryw(cur);
   d.obciag=0;d.doffStart=Date.now();d.dwDoff=0;
   d.zryw=0;d.zrywCycle=0;d.zrywKg=0;d.zrywPkg=[];d.wlok=0;d.launched=POS(cur);
-  d.notifDoff=0;d.notifPal=0;setState("run");toast(t("startOk"));};
+  d.zrywPos=[];d.zrywCycPos=[];d.wlokPos=[];d.zrywKgPos={};syncZ(cur);
+  d.notifDoff=0;d.notifPal=0;jrn(cur,"start");setState("run");toast(t("startOk"));};
 /* Maszyna puszczona = to samo zlecenie, przewleczone pozycje znów nawijają.
    Obciąg i waga na nawojach lecą dalej; zrywCycle zostaje, bo te nawoje pójdą na B. */
-$("btnResume").onclick=()=>{const d=S();flushZryw(cur);d.zryw=0;setState("run");};
+$("btnResume").onclick=()=>{const d=S();flushZryw(cur);d.zrywPos=[];syncZ(cur);setState("run");};
 /* „Puszczone pozycje" wracają przy podmianie na komplet (8 albo 6) — operator koryguje,
    jeśli faktycznie ruszyło mniej */
+/* Pozycje zaznacza się dotknięciem — wiadomo, która się zerwała, a nie tylko ile ich było. */
+function togglePoz(kind,pz){const d=S();
+  const arr=kind==="z"?d.zrywPos:d.wlokPos;
+  const i=arr.indexOf(pz);
+  if(i>=0){arr.splice(i,1);
+    if(kind==="z"){const j=d.zrywCycPos.indexOf(pz);
+      if(j>=0){d.zrywCycPos.splice(j,1);delete d.zrywKgPos[pz];}
+      d.zrywShift=Math.max(0,d.zrywShift-1);jrn(cur,"zrywOff",{p:pz});}
+    else{d.wlokShift=Math.max(0,d.wlokShift-1);jrn(cur,"wlokOff",{p:pz});}}
+  else{flushZryw(cur);arr.push(pz);arr.sort(function(a,b){return a-b;});
+    if(kind==="z"){if(d.zrywCycPos.indexOf(pz)<0){d.zrywCycPos.push(pz);
+        d.zrywCycPos.sort(function(a,b){return a-b;});}
+      d.zrywKgPos[pz]=+handover(cur).one.toFixed(2);   /* waga nawoju zamraża się tutaj */
+      d.zrywShift++;jrn(cur,"zryw",{p:pz});}
+    else{d.wlokShift++;jrn(cur,"wlok",{p:pz});}}
+  syncZ(cur);save();paint();buildDrawer();}
+function buildPoz(){[["z","rowZryw"],["w","rowWlok"]].forEach(function(pair){
+  const el=$(pair[1]);el.innerHTML="";
+  for(let i=1;i<=POS(cur);i++){const b=document.createElement("button");
+    b.className="pz";b.textContent=i;b.dataset.p=i;
+    b.onclick=function(){togglePoz(pair[0],parseInt(b.dataset.p,10));};
+    el.appendChild(b);}});}
+function paintPoz(){const d=S();
+  $("rowZryw").querySelectorAll(".pz").forEach(function(b){const p=+b.dataset.p;
+    b.className="pz"+(d.zrywPos.indexOf(p)>=0?" zr":(d.zrywCycPos.indexOf(p)>=0?" zrOld":""))+
+      (p>LAUNCH(cur)?" dim":"");});
+  $("rowWlok").querySelectorAll(".pz").forEach(function(b){const p=+b.dataset.p;
+    b.className="pz"+(d.wlokPos.indexOf(p)>=0?" wl":"")+(p>LAUNCH(cur)?" dim":"");});}
+
+$("lPlus").onclick=()=>{const d=S();if(LAUNCH(cur)<POS(cur)){flushZryw(cur);d.launched=LAUNCH(cur)+1;
+  jrn(cur,"launch",{n:d.launched});}save();paint();buildDrawer();};
+$("lMinus").onclick=()=>{const d=S();
+  if(LAUNCH(cur)>Math.max(1,d.zryw)){flushZryw(cur);d.launched=LAUNCH(cur)-1;
+    jrn(cur,"launch",{n:d.launched});}save();paint();buildDrawer();};
+
+/* maszyna mogła nie podmienić — to też jest zdarzenie zmiany */
+$("btnNoDoff").onclick=()=>{jrn(cur,"noobc",{n:S().obciag});save();paint();toast(t("noDoffOk"));};
+
 $("btnReset").onclick=()=>{if(confirm(t("resetAsk"))){S().shift=mkG();save();paint();toast(t("resetOk"));}};
 $("btnClearLog").onclick=()=>{if(confirm(t("logAsk"))){S().log=[];save();paint();}};
 $("btnExport").onclick=async()=>{const s=JSON.stringify({v:4,db});
@@ -1154,7 +1252,9 @@ function paint(){
   $("vCycRe").textContent=cRe>0?hm(cRe*HOUR):"–";
   $("vDwDoff").textContent=dwD?hm(dwD):"–";
 
-  $("vZryw").textContent=d.zryw;$("vWlok").textContent=d.wlok;
+  $("t_pozZryw").textContent=t("pozZryw");$("t_pozWlok").textContent=t("pozWlok");
+  if(!$("rowZryw").firstChild||$("rowZryw").children.length!==POS(cur))buildPoz();
+  paintPoz();
   $("vLaunched").textContent=LAUNCH(cur)+" / "+POS(cur);
   $("vWindPos").textContent=windPos(cur)+" / "+POS(cur);
   $("vLaunchSet").textContent=LAUNCH(cur);
@@ -1262,11 +1362,29 @@ function paint(){
   $("srcNote").textContent=rate>0?(anyRe?t("srcRe",{n:nLog}):t("srcZl")):"";
 
   $("sGross").value=n1(c.kgNet+c.kgTube)+" kg";
+  paintJrn();
   const L=d.log.slice(-6).reverse(),lb=$("logBox");
   lb.innerHTML=L.length?'<div class="hint" style="margin:8px 0 2px">'+t("logT")+"</div>":"";
   L.forEach((en,i)=>{const p=d.log[d.log.length-1-i-1],e=document.createElement("div");e.className="log";
     e.innerHTML="<span>"+stp(LT(en))+"</span><span>"+(p?hm(LT(en)-LT(p)-LD(en)):"–")+"</span>";lb.appendChild(e);});
 }
+
+/* ---------- dziennik: render ---------- */
+const JL={obc:"jObc",noobc:"jNoObc",zryw:"jZryw",zrywOff:"jZrywOff",wlok:"jWlok",wlokOff:"jWlokOff",
+  run:"jRun",start:"jStart",first:"jFirst",launch:"jLaunch",
+  odpad:"stOdpad",awaria:"stAwaria",stop:"stopped",proba:"stProba"};
+function paintJrn(){const d=S(),box=$("jrnBox");box.innerHTML="";
+  const J=(d.journal||[]).slice(-40);
+  if(!J.length){box.innerHTML='<div style="color:var(--dim)">'+t("jrnEmpty")+"</div>";return;}
+  J.forEach(function(e){
+    const r=document.createElement("div");r.className="log";
+    let txt=t(JL[e.k]||e.k,{n:e.n,p:e.p,a:e.a||"",h:e.h||""});
+    /* stan trwa dalej, dopóki maszyna nie ruszy — wtedy pokazujemy licznik na żywo */
+    let dur="";
+    if(STATEK.indexOf(e.k)>=0)dur=e.d!=null?hm(e.d):hm(Date.now()-e.t)+" …";
+    r.innerHTML="<span><b>"+clk(e.t)+"</b> "+txt+"</span><span>"+dur+"</span>";
+    if(e.k==="awaria"||e.k==="noobc")r.style.color="var(--bad)";
+    box.appendChild(r);});}
 
 /* ---------- paint: stock ---------- */
 function paintStock(){
@@ -1370,7 +1488,10 @@ function buildFirst(){const fb=$("firstBox");fb.innerHTML="";DUI={};
     const card=document.createElement("div");card.className="mcard";
     const head=document.createElement("div");head.className="mhead";card.appendChild(head);
     const row=document.createElement("div");
-    row.style.cssText="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center";
+    row.style.cssText="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center";
+    const obc=document.createElement("input");
+    obc.type="number";obc.inputMode="numeric";obc.min="0";obc.placeholder=t("obcNr");
+    obc.style.textAlign="center";obc.value=d.obciag||"";
     const inp=document.createElement("input");
     inp.type="text";inp.inputMode="numeric";inp.maxLength=5;
     inp.placeholder="07:20";inp.style.textAlign="center";inp.autocomplete="off";
@@ -1382,12 +1503,15 @@ function buildFirst(){const fb=$("firstBox");fb.innerHTML="";DUI={};
       inp.value=hm2(q[0],q[1]);
       const r=timeInShift(l.id,q[0],q[1]);
       d.firstDoff=r.ts;d.doffStart=r.ts;d.dwDoff=0;    /* ręczna kotwica cyklu */
+      const no=parseInt(obc.value,10);
+      if(isFinite(no)&&no>=0)d.obciag=no;              /* np. 27 = maszyna zrobiła już 26 */
+      jrn(l.id,"first",{h:clk(r.ts),n:d.obciag});
       save();buildDrawer();updateFirst();paintSched();
       toast(r.inShift?t("firstOk",{l:l.name,t:clk(r.ts)})
                      :t("firstOut",{l:l.name,t:stp(r.ts)}));};
     btn.onclick=apply;
     inp.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();inp.blur();apply();}};
-    row.appendChild(inp);row.appendChild(btn);card.appendChild(row);
+    row.appendChild(inp);row.appendChild(obc);row.appendChild(btn);card.appendChild(row);
     const info=document.createElement("div");info.className="log";info.style.marginTop="6px";
     card.appendChild(info);fb.appendChild(card);
     DUI[l.id]={inp,info,head};});}
@@ -1463,13 +1587,36 @@ function paintHist(keep){
   const sum=rows.reduce((a,r)=>({ob:a.ob+r.ob,n:a.n+r.a1[0]+r.a2[0]+r.b[0],
     kg:a.kg+r.a1[1]+r.a2[1]+r.b[1],u:a.u+r.u[0],z:a.z+r.z,w:a.w+r.w,str:a.str+r.str}),
     {ob:0,n:0,kg:0,u:0,z:0,w:0,str:0});
+  const per=rows.reduce(function(a,r){
+    ["a1","a2","b"].forEach(function(g){a[g][0]+=r[g][0];a[g][1]+=r[g][1];});
+    a.uk+=r.u[1];return a;},{a1:[0,0],a2:[0,0],b:[0,0],uk:0});
   $("histTot").innerHTML=
     "<div>"+t("hObc")+"</div><div class='num'>"+sum.ob+"</div>"+
-    "<div>A1 / A2 / B</div><div class='num'>"+sum.n+" szt</div>"+
-    "<div>"+t("kgsum")+"</div><div class='num big'>"+n1(sum.kg)+" kg</div>"+
-    "<div>"+t("utyl")+"</div><div class='num'>"+sum.u+" szt</div>"+
+    G.map(function(g){return "<div>"+GN[g]+"</div><div class='num'>"+
+      per[g][0]+" szt · "+n1(per[g][1])+" kg</div>";}).join("")+
+    "<div>"+t("sum")+"</div><div class='num big'>"+sum.n+" szt · "+n1(sum.kg)+" kg</div>"+
+    "<div>"+t("utyl")+"</div><div class='num'>"+sum.u+" szt · "+n1(per.uk)+" kg</div>"+
     "<div>"+t("zryw")+"</div><div class='num'>"+sum.z+" / "+sum.w+"</div>"+
     "<div>"+t("hStr")+"</div><div class='num'>"+n1(sum.str)+" kg</div>";
+  /* to samo w rozbiciu na maszyny — jedna suma nie mówi, która linia ciągnie w dół */
+  const mb=$("histMachBox");mb.innerHTML="";
+  LINES.forEach(function(l){
+    const rs=rows.filter(function(r){return r.m===l.id;});
+    if(!rs.length)return;
+    const p=rs.reduce(function(a,r){["a1","a2","b"].forEach(function(g){
+      a[g][0]+=r[g][0];a[g][1]+=r[g][1];});a.ob+=r.ob;a.u+=r.u[0];
+      a.z+=r.z;a.w+=r.w;a.str+=r.str;return a;},
+      {a1:[0,0],a2:[0,0],b:[0,0],ob:0,u:0,z:0,w:0,str:0});
+    const kg=p.a1[1]+p.a2[1]+p.b[1],szt=p.a1[0]+p.a2[0]+p.b[0];
+    const c=document.createElement("div");c.className="mcard";
+    c.innerHTML="<div class='mhead'><b>"+l.name+"</b><em>"+t("hObc")+" "+p.ob+" · "+
+      rs.length+" zm.</em></div>"+
+      G.map(function(g){return "<div class='log'><span>"+GN[g]+"</span><span>"+
+        p[g][0]+" szt · "+n1(p[g][1])+" kg</span></div>";}).join("")+
+      "<div class='log'><span><b>"+t("sum")+"</b></span><span><b>"+szt+" szt · "+n1(kg)+" kg</b></span></div>"+
+      "<div class='log'><span>"+t("utyl")+" "+p.u+" · "+t("zryw")+" "+p.z+"/"+p.w+
+      "</span><span>"+t("hStr")+" "+n1(p.str)+" kg</span></div>";
+    mb.appendChild(c);});
   const box=$("histBox");box.innerHTML="";
   if(!rows.length){const e=document.createElement("div");e.className="pad";e.style.color="var(--dim)";
     e.textContent=t("histEmpty");box.appendChild(e);return;}
