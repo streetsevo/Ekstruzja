@@ -122,9 +122,15 @@ W raporcie zmiany siedzi: data, zmiana dzienna czy nocna, maszyna, zlecenie i lo
 
 Dwa przyciski eksportu: bieżący miesiąc i całe archiwum. Plik CSV otwiera się w Excelu, średnik jako separator, więc polskie Windows otworzy go bez kombinowania.
 
-Cały rok to około **720 KB** — mieści się w pamięci telefonu z siedmiokrotnym zapasem.
+Archiwum siedzi w **IndexedDB** — prawdziwej bazie w telefonie, a nie w pamięci przeglądarki. Rok raportów z dziennikiem to około 2,7 MB; IndexedDB daje na to setki megabajtów, więc miejsca starczy na wiele lat. Zajętość widać w `Ustawienia maszyny → Baza raportów`.
 
-Dane siedzą w jednym telefonie. Przed zmianą telefonu zrób `Eksport danych` w ustawieniach i `Import` na nowym.
+Aplikacja przy starcie prosi Androida o **pamięć trwałą**, żeby system nie skasował danych przy braku miejsca. Dla zainstalowanej aplikacji zgoda jest zwykle przyznawana automatycznie — wtedy przy zajętości pisze `trwała`.
+
+Dane, które były zapisane wcześniej, przenoszą się do bazy same przy pierwszym uruchomieniu nowej wersji.
+
+Dane siedzą w jednym telefonie. Przed zmianą telefonu zrób `Eksport CSV — całe archiwum` oraz `Eksport danych` w ustawieniach.
+
+Odinstalowanie aplikacji albo `Wyczyść dane` w ustawieniach Androida kasuje bazę bezpowrotnie — dlatego warto raz w miesiącu zrzucić CSV.
 
 ## Po dniach wolnych
 
