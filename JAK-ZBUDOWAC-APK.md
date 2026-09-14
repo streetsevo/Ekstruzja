@@ -8,6 +8,7 @@ Zawartość paczki:
 | `manifest.json` | nazwa, ikona, kolory — potrzebne do instalacji |
 | `sw.js` | praca bez internetu |
 | `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` | ikony |
+| `.nojekyll` | wyłącza przetwarzanie plików przez GitHub Pages |
 
 Trzy drogi, od najszybszej. Wystarczy wybrać jedną.
 
@@ -44,10 +45,28 @@ Po 1–2 minutach dostaniesz adres:
 
 Otwórz go i sprawdź, czy aplikacja działa.
 
+**Krok 2b — SPRAWDŹ, zanim pójdziesz dalej**
+
+Otwórz w przeglądarce dwa adresy:
+
+1. `https://TWOJA-NAZWA.github.io/ekstruzja/` — musi pokazać aplikację
+2. `https://TWOJA-NAZWA.github.io/ekstruzja/manifest.json` — musi pokazać tekst zaczynający się od `{ "id": "./"`
+
+Jeśli drugi adres daje 404, PWABuilder napisze **Missing Name** i przycisk `Package For Stores` zostanie szary. Najczęstsze przyczyny:
+
+| objaw | przyczyna | co zrobić |
+|---|---|---|
+| 404 na obu adresach | do repozytorium trafił ZIP zamiast plików | rozpakuj i wrzuć pliki pojedynczo |
+| działa `/ekstruzja/ekstruzja-pwa/` | pliki są w podfolderze | przenieś do katalogu głównego repozytorium |
+| 404 tylko na manifest.json | plik się nie wgrał | wrzuć `manifest.json` jeszcze raz |
+| strona pusta, brak zielonego komunikatu w Pages | strona się jeszcze buduje | odczekaj 2 minuty i odśwież |
+
+W repozytorium mają leżeć osobno: `index.html`, `manifest.json`, `sw.js`, `.nojekyll` i trzy pliki `icon-*.png`.
+
 **Krok 3 — zbuduj APK**
 
 1. Wejdź na `pwabuilder.com`.
-2. Wklej swój adres → **Start**.
+2. Wklej adres strony ze **slashem na końcu**: `https://TWOJA-NAZWA.github.io/ekstruzja/` — nie adres repozytorium `github.com/...` → **Start**.
 3. **Package for stores** → **Android**.
 4. Zostaw domyślne ustawienia, zaznacz opcję podpisania nowym kluczem → **Download**.
 
