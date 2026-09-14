@@ -6,8 +6,8 @@
 <meta name="theme-color" content="#14508C">
 <meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
 <title>Ekstruzja</title>
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2314508C'/%3E%3Crect x='8' y='29' width='48' height='6' rx='3' fill='%23fff'/%3E%3Crect x='19' y='20' width='26' height='24' rx='3' fill='%23D4890B'/%3E%3C/svg%3E">
 <style>
   :root{--steel:#E5E9ED;--panel:#FFF;--ink:#111820;--dim:#5B6B7B;--blue:#14508C;--blue-d:#0E3C6B;
@@ -366,7 +366,9 @@
       <div class="hint" id="schedNote" style="margin:10px 0 0"></div>
     </div>
   </section>
-  <section><h2 id="t_firstT"></h2><div id="firstBox"></div></section>
+  <section><h2 id="t_firstT"></h2>
+    <div class="hint" id="hmHint" style="padding:6px 14px 0;margin:0"></div>
+    <div id="firstBox"></div></section>
 </div>
 
 <div id="viewHist" hidden>
@@ -521,6 +523,10 @@ const T={pl:{
  doffTab:"Podmiany",schedT:"Harmonogram zmiany",firstT:"Pierwsza podmiana na zmianie",
  schedNote:"Każda nawijarka liczy się osobno. E1 podaje nitkę do N1A i N1B, ale nawijają niezależnie — zryw na jednej nie zatrzymuje drugiej, więc godziny podmian się rozjeżdżają.",
  schedEmpty:"Brak maszyn w produkcji",firstSet:"Ustaw",cyc:"cykl",
+ noRate:"Brak wydajności — uzupełnij w zakładce maszyny",notRunning:"Nie nawija ({s})",
+ hmBad:"Godzina w formacie 0720 albo 7:20",
+ firstOut:"{l} — {t}, poza bieżącą zmianą",
+ hmHint:"Godzinę wpisz z klawiatury: 0720, 720 albo 7:20 — bez okienka z zegarem. Północ to 0000 albo 2400.",
  firstOk:"{l} — podmiana o {t}",nextIs:"Następna",thenIs:"kolejne",collide:"razem z",
  hist:"Raporty zmian",histT:"Raporty zmian",histMonth:"Miesiąc",histList:"Zmiany",
  histNote:"Każda zmiana zapisuje się sama przy zmianie warty. Archiwum trzyma 13 miesięcy.",
@@ -620,6 +626,10 @@ const T={pl:{
  doffTab:"Doffings",schedT:"Shift timetable",firstT:"First doffing of the shift",
  schedNote:"Each winder counts separately. E1 feeds both N1A and N1B, but they wind independently — a break on one does not stop the other, so their doffing times drift apart.",
  schedEmpty:"No machines in production",firstSet:"Set",cyc:"cycle",
+ noRate:"No output figure — fill it in on the machine tab",notRunning:"Not winding ({s})",
+ hmBad:"Time as 0720 or 7:20",
+ firstOut:"{l} — {t}, outside the current shift",
+ hmHint:"Type the time on the keypad: 0720, 720 or 7:20 — no clock dialog. Midnight is 0000 or 2400.",
  firstOk:"{l} — doffing at {t}",nextIs:"Next",thenIs:"then",collide:"together with",
  hist:"Shift reports",histT:"Shift reports",histMonth:"Month",histList:"Shifts",
  histNote:"Every shift is filed automatically at handover. The archive keeps 13 months.",
@@ -1060,7 +1070,7 @@ function beep(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)(
     o.start(t0);o.stop(t0+0.5);});}catch(e){}}
 function notify(title,body){
   try{if("Notification" in window&&Notification.permission==="granted"){
-    const o={body,icon:"icon-192.png",badge:"icon-192.png",tag:"ekstruzja",renotify:true,
+    const o={body,icon:"./icon-192.png",badge:"./icon-192.png",tag:"ekstruzja",renotify:true,
              vibrate:[300,120,300],requireInteraction:true};
     if(navigator.serviceWorker&&navigator.serviceWorker.ready)
       navigator.serviceWorker.ready.then(r=>r.showNotification(title,o)).catch(()=>{new Notification(title,o);});
@@ -1330,57 +1340,91 @@ function schedule(id,limit){const d=db[id],c=cycMs(id);
   let t=d.doffStart+c+downNow(id);
   while(t<=end&&out.length<(limit||12)){out.push(t);t+=c;}
   return out;}
-/* godzina wpisana ręcznie trafia w okno bieżącej zmiany, także tej przez północ */
+/* Godzina wpisana ręcznie trafia w okno bieżącej zmiany, także tej przez północ.
+   Bierzemy ten wariant doby, który wpada w zmianę; jeśli żaden nie wpada — najbliższy,
+   ale mówimy o tym operatorowi zamiast po cichu przesuwać o dobę. */
 function timeInShift(id,hh,mm){const sb=bounds(id,Date.now()),d0=new Date(sb.start);
-  let c=new Date(d0.getFullYear(),d0.getMonth(),d0.getDate(),hh,mm,0,0).getTime();
-  if(c<sb.start)c+=86400000;
-  if(c>sb.end)c-=86400000;
-  return c;}
+  const base=new Date(d0.getFullYear(),d0.getMonth(),d0.getDate(),hh,mm,0,0).getTime();
+  let best=base,bd=Infinity;
+  for(const off of[-1,0,1]){const c=base+off*86400000;
+    const dist=c<sb.start?sb.start-c:(c>sb.end?c-sb.end:0);
+    if(dist<bd){bd=dist;best=c;}}
+  return{ts:best,inShift:bd===0};}
 
-function paintDoffs(){
-  rollShift();
-  $("hLine").textContent=t("doffTab");$("hSub").textContent="";
-  $("schedNote").textContent=t("schedNote");
-  /* wspólna oś czasu: wszystkie maszyny posortowane po godzinie */
+/* Godzinę wpisuje się z klawiatury — okno z zegarem w WebView jest wolne i się zamyka.
+   Przyjmujemy 7, 720, 0720 albo 7:20. */
+function parseHM(v){const d=String(v).replace(/\D/g,"");if(!d.length)return null;
+  let hh,mm;
+  if(d.length<=2){hh=+d;mm=0;}
+  else if(d.length===3){hh=+d[0];mm=+d.slice(1);}
+  else{hh=+d.slice(0,2);mm=+d.slice(2,4);}
+  if(hh===24&&mm===0)hh=0;                 /* 2400 i 24 to polnoc, tak sie pisze w raportach */
+  if(hh>23||mm>59)return null;return[hh,mm];}
+const hm2=(h,m)=>String(h).padStart(2,"0")+":"+String(m).padStart(2,"0");
+const STK={proba:"stProba",odpad:"stOdpad",awaria:"stAwaria",stop:"stopped"};
+
+/* Karty budujemy raz. Gdyby odświeżały się co sekundę, kasowałyby pole w trakcie pisania. */
+let DUI=null;
+function buildFirst(){const fb=$("firstBox");fb.innerHTML="";DUI={};
+  LINES.forEach(l=>{const d=db[l.id];
+    const card=document.createElement("div");card.className="mcard";
+    const head=document.createElement("div");head.className="mhead";card.appendChild(head);
+    const row=document.createElement("div");
+    row.style.cssText="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center";
+    const inp=document.createElement("input");
+    inp.type="text";inp.inputMode="numeric";inp.maxLength=5;
+    inp.placeholder="07:20";inp.style.textAlign="center";inp.autocomplete="off";
+    inp.value=d.firstDoff?clk(d.firstDoff):"";
+    inp.onblur=()=>{const q=parseHM(inp.value);if(q)inp.value=hm2(q[0],q[1]);};
+    const btn=document.createElement("button");btn.className="tgl";btn.textContent=t("firstSet");
+    const apply=()=>{const q=parseHM(inp.value);
+      if(!q){toast(t("hmBad"));return;}
+      inp.value=hm2(q[0],q[1]);
+      const r=timeInShift(l.id,q[0],q[1]);
+      d.firstDoff=r.ts;d.doffStart=r.ts;d.dwDoff=0;    /* ręczna kotwica cyklu */
+      save();buildDrawer();updateFirst();paintSched();
+      toast(r.inShift?t("firstOk",{l:l.name,t:clk(r.ts)})
+                     :t("firstOut",{l:l.name,t:stp(r.ts)}));};
+    btn.onclick=apply;
+    inp.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();inp.blur();apply();}};
+    row.appendChild(inp);row.appendChild(btn);card.appendChild(row);
+    const info=document.createElement("div");info.className="log";info.style.marginTop="6px";
+    card.appendChild(info);fb.appendChild(card);
+    DUI[l.id]={inp,info,head};});}
+
+function updateFirst(){if(!DUI)return;
+  LINES.forEach(l=>{const u=DUI[l.id];if(!u)return;
+    const d=db[l.id],c=cycMs(l.id);
+    u.head.innerHTML="<b>"+l.name+"</b><em>"+(c>0?t("cyc")+" "+hm(c):t("nd"))+
+      (d.state!=="run"?" · "+t(STK[d.state]):"")+"</em>";
+    const nx=schedule(l.id,4);
+    if(nx.length)
+      u.info.innerHTML="<span>"+t("nextIs")+" <b>"+clk(nx[0])+"</b></span><span>"+
+        (nx.length>1?t("thenIs")+" "+nx.slice(1).map(clk).join(", "):"")+"</span>";
+    else{const why=c<=0?t("noRate"):t("notRunning",{s:t(STK[d.state]||"stopped")});
+      u.info.innerHTML="<span style='color:var(--dim)'>"+why+"</span><span></span>";}});}
+
+function paintSched(){
   let all=[];
   LINES.forEach(l=>schedule(l.id,8).forEach(ts=>all.push({ts,id:l.id})));
   all.sort((a,b)=>a.ts-b.ts);
   const box=$("schedBox");box.innerHTML="";
-  if(!all.length){box.innerHTML='<div style="color:var(--dim)">'+t("schedEmpty")+"</div>";}
-  all.slice(0,14).forEach((e,i)=>{
+  if(!all.length){box.innerHTML='<div style="color:var(--dim)">'+t("schedEmpty")+"</div>";return;}
+  all.slice(0,14).forEach(e=>{
     const near=all.filter(x=>x!==e&&Math.abs(x.ts-e.ts)<=15*60000);
     const r=document.createElement("div");r.className="log";
     r.innerHTML="<span><b>"+clk(e.ts)+"</b> · "+L_(e.id).name+
       (near.length?" <span style='color:var(--amber)'>"+t("collide")+" "+
         near.map(x=>L_(x.id).name.split(" ").pop()).join(", ")+"</span>":"")+
       "</span><span>"+hm(e.ts-Date.now())+"</span>";
-    box.appendChild(r);});
+    box.appendChild(r);});}
 
-  const fb=$("firstBox");fb.innerHTML="";
-  LINES.forEach(l=>{const d=db[l.id],c=cycMs(l.id),card=document.createElement("div");
-    card.className="mcard";
-    const st=d.state==="run"?"":" · "+t({proba:"stProba",odpad:"stOdpad",awaria:"stAwaria",stop:"stopped"}[d.state]);
-    card.innerHTML="<div class='mhead'><b>"+l.name+"</b><em>"+
-      (c>0?t("cyc")+" "+hm(c):t("nd"))+st+"</em></div>";
-    const row=document.createElement("div");
-    row.style.cssText="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center";
-    const inp=document.createElement("input");inp.type="time";
-    inp.value=d.firstDoff?new Date(d.firstDoff).toTimeString().slice(0,5):"";
-    const btn=document.createElement("button");btn.className="tgl";btn.textContent=t("firstSet");
-    btn.onclick=()=>{const v=inp.value;if(!v)return;
-      const [hh,mm]=v.split(":").map(Number);
-      const ts=timeInShift(l.id,hh,mm);
-      d.firstDoff=ts;d.doffStart=ts;d.dwDoff=0;      /* ręczna kotwica cyklu */
-      save();paintDoffs();buildDrawer();toast(t("firstOk",{l:l.name,t:clk(ts)}));};
-    row.appendChild(inp);row.appendChild(btn);card.appendChild(row);
-    const nx=schedule(l.id,4);
-    const info=document.createElement("div");info.className="log";info.style.marginTop="6px";
-    info.innerHTML=nx.length
-      ?"<span>"+t("nextIs")+" <b>"+clk(nx[0])+"</b></span><span>"+
-       (nx.length>1?t("thenIs")+" "+nx.slice(1).map(clk).join(", "):"")+"</span>"
-      :"<span style='color:var(--dim)'>"+t("schedEmpty")+"</span><span></span>";
-    card.appendChild(info);fb.appendChild(card);});
-}
+function paintDoffs(full){
+  rollShift();
+  $("hLine").textContent=t("doffTab");$("hSub").textContent="";
+  $("schedNote").textContent=t("schedNote");$("hmHint").textContent=t("hmHint");
+  if(full||!DUI)buildFirst();
+  paintSched();updateFirst();}
 
 /* ---------- raporty ---------- */
 const CSVH=["Data","Zmiana","Maszyna","Zlecenie","Lot","Obciagi",
@@ -1447,12 +1491,12 @@ function render(){
   $("viewDoff").hidden=view!=="doffs";
   if(view==="line")paint();
   else if(view==="stock")paintStock();
-  else if(view==="doffs")paintDoffs();
+  else if(view==="doffs")paintDoffs(true);
   else paintHist();
   buildDrawer();}
 applyLang();loadInputs();render();
-setInterval(()=>{if(view==="line")paint();else if(view==="doffs")paintDoffs();},1000);
-if("serviceWorker" in navigator&&location.protocol.startsWith("http")){navigator.serviceWorker.register("sw.js").catch(()=>{});}
+setInterval(()=>{if(view==="line")paint();else if(view==="doffs")paintDoffs(false);},1000);
+if("serviceWorker" in navigator&&location.protocol.startsWith("http")){navigator.serviceWorker.register("./sw.js").catch(()=>{});}
 </script>
 </body>
 </html>
