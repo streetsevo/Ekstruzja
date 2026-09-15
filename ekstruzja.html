@@ -142,19 +142,58 @@
 <main>
 <div id="viewLine">
   <section>
-    <h2 id="t_lnHead"></h2>
-    <div class="pad">
-      <div class="two">
-        <label><span id="t_onr"></span><input id="oNr" inputmode="numeric" placeholder="872600213"></label>
-        <label><span id="t_olot"></span><input id="oLot" placeholder="E1007P"></label>
+    <details id="cfgDet">
+      <summary id="t_cfgT"></summary>
+      <div class="pad">
+        <div class="two">
+          <label><span id="t_onr"></span><input id="oNr" inputmode="numeric" placeholder="872600213"></label>
+          <label><span id="t_olot"></span><input id="oLot" placeholder="E1007P"></label>
+        </div>
+        <label><span id="t_oidx"></span><input id="oIdx" placeholder="POY-PP-…"></label>
+        <div class="two">
+          <label><span id="t_okg"></span><input id="oKg" type="number" inputmode="decimal" min="0" placeholder="1600"></label>
+          <label><span id="t_okgh"></span><input id="oKgh" type="number" inputmode="decimal" min="0" placeholder="17,7"></label>
+        </div>
+        <label id="pairBox" hidden><span id="t_pair"></span>
+          <select id="oPair"><option value="1"></option><option value="0"></option></select></label>
+        <div class="hint" id="pairNote"></div>
+        <label><span id="t_odl"></span><input id="oDl" type="datetime-local"></label>
+        <div class="two">
+          <label><span id="t_ospd"></span><input id="oSpd" type="number" inputmode="decimal" min="0" placeholder="2052"></label>
+          <label><span id="t_kgnet"></span><input id="sKg" type="number" inputmode="decimal" min="0.1" step="0.1"></label>
+        </div>
+        <div class="hint" id="spdNote"></div>
+        <div class="hint warn" id="t_kghint"></div>
+
+        <div id="t_cycT" style="font-size:.8rem;font-weight:700;color:var(--ink);margin:4px 0 6px"></div>
+        <div class="three">
+          <label><span id="t_cycEl"></span><input id="cEl" type="number" inputmode="numeric" min="0"></label>
+          <label><span id="t_cycLeft"></span><input id="cLeft" type="number" inputmode="numeric" min="0"></label>
+          <label><span id="t_cycTot"></span><input id="cTot" type="number" inputmode="numeric" min="0"></label>
+        </div>
+        <button class="btn ghost" id="btnCyc" style="margin-top:0"></button>
+        <div class="hint" id="cycNote" style="margin:8px 0 12px"></div>
+
+        <div class="two">
+          <label><span id="t_pos"></span><input id="sPos" readonly></label>
+          <label><span id="t_palN"></span><input id="sPalN" readonly></label>
+        </div>
+        <label><span id="t_sh1"></span><select id="sShift"><option value="6">06:00</option><option value="7">07:00</option><option value="8">08:00</option><option value="5">05:00</option></select></label>
+
+        <button class="btn ghost" id="btnScan" style="margin-top:0"></button>
+        <input id="scanFile" type="file" accept="image/*" capture="environment" hidden>
+        <div class="hint" id="scanNote" style="margin:8px 0 12px"></div>
+
+        <div class="rows" style="margin-bottom:10px">
+          <div id="t_dbT"></div><div class="num" id="vDb">–</div>
+          <div id="t_dbUse"></div><div class="num" id="vDbUse">–</div>
+        </div>
+        <div id="logBox"></div>
+        <button class="btn ghost" id="btnClearLog" style="margin-top:12px"></button>
+        <button class="btn ghost" id="btnExport" style="margin-top:8px"></button>
+        <button class="btn ghost" id="btnImport" style="margin-top:8px"></button>
       </div>
-      <label style="margin-bottom:6px"><span id="t_ospd"></span>
-        <input id="oSpd" type="number" inputmode="decimal" min="0" placeholder="2052"></label>
-      <div class="hint" id="spdNote"></div>
-      <button class="btn ghost" id="btnScan" style="margin-top:4px"></button>
-      <input id="scanFile" type="file" accept="image/*" capture="environment" hidden>
-      <div class="hint" id="scanNote" style="margin:8px 0 0"></div>
-    </div>
+    </details>
   </section>
 
   <section class="doff" id="doffCard">
@@ -174,11 +213,17 @@
       <div class="sub num" id="doffInfo">&nbsp;</div>
       <div class="flag n" id="obcFlag" hidden></div>
       <div class="flag n" id="palNextFlag" hidden></div>
-      <button class="btn" id="btnDoff"></button>
+      <div style="display:grid;grid-template-columns:104px 1fr;gap:8px;margin-top:12px">
+        <input id="doffAt" type="text" inputmode="numeric" maxlength="5" autocomplete="off"
+               style="text-align:center" placeholder="teraz">
+        <button class="btn" id="btnDoff" style="margin-top:0"></button>
+      </div>
+      <div class="hint" id="doffAtNote" style="margin:8px 0 0"></div>
       <button class="btn ghost" id="btnNoDoff" style="margin-top:8px"></button>
       <div class="rows" style="margin-top:12px">
         <div id="t_obc"></div><div class="num" id="vObc">–</div>
         <div id="t_nwDoff"></div><div class="num" id="vNwDoff">–</div>
+        <div id="t_kgNw"></div><div class="num" id="vKgNw">–</div>
         <div id="t_cycTh"></div><div class="num" id="vCycTh">–</div>
         <div id="t_cycRe"></div><div class="num" id="vCycRe">–</div>
         <div id="t_dwDoff"></div><div class="num" id="vDwDoff">–</div>
@@ -300,15 +345,6 @@
   <section>
     <h2 id="t_ord"></h2>
     <div class="pad">
-      <label><span id="t_oidx"></span><input id="oIdx" placeholder="POY-PP-…"></label>
-      <div class="two">
-        <label><span id="t_okg"></span><input id="oKg" type="number" inputmode="decimal" min="0" placeholder="1600"></label>
-        <label><span id="t_okgh"></span><input id="oKgh" type="number" inputmode="decimal" min="0" placeholder="17,7"></label>
-      </div>
-      <label id="pairBox" hidden><span id="t_pair"></span>
-        <select id="oPair"><option value="1"></option><option value="0"></option></select></label>
-      <div class="hint" id="pairNote"></div>
-      <label><span id="t_odl"></span><input id="oDl" type="datetime-local"></label>
       <div class="rows" style="margin-bottom:10px">
         <div id="t_opack"></div><div class="num big" id="vPackKg">0 kg</div>
         <div id="t_oun"></div><div class="num" id="vUnp">–</div>
@@ -354,25 +390,6 @@
     </div>
   </section>
 
-  <section><details><summary id="t_set"></summary><div class="pad">
-    <div class="two">
-      <label><span id="t_pos"></span><input id="sPos" readonly></label>
-      <label><span id="t_palN"></span><input id="sPalN" readonly></label>
-      <label><span id="t_kgnet"></span><input id="sKg" type="number" inputmode="decimal" min="0.1" step="0.1"></label>
-      <label><span id="t_tube"></span><input id="sTube" type="number" inputmode="decimal" min="0" step="0.01"></label>
-      <label><span id="t_sh1"></span><select id="sShift"><option value="6">06:00</option><option value="7">07:00</option><option value="8">08:00</option><option value="5">05:00</option></select></label>
-      <label><span id="t_gross"></span><input id="sGross" readonly></label>
-    </div>
-    <div class="hint warn" id="t_kghint"></div>
-    <div class="rows" style="margin-bottom:10px">
-      <div id="t_dbT"></div><div class="num" id="vDb">–</div>
-      <div id="t_dbUse"></div><div class="num" id="vDbUse">–</div>
-    </div>
-    <div id="logBox"></div>
-    <button class="btn ghost" id="btnClearLog" style="margin-top:12px"></button>
-    <button class="btn ghost" id="btnExport" style="margin-top:8px"></button>
-    <button class="btn ghost" id="btnImport" style="margin-top:8px"></button>
-  </div></details></section>
 </div>
 
 <div id="viewDoff" hidden>
@@ -451,13 +468,13 @@ function migG(o,kgNet){const r=mkG();if(!o)return r;
   return r;}
 const gN=o=>G.reduce((a,g)=>a+o[g].n,0);
 const gKG=o=>G.reduce((a,g)=>a+o[g].kg,0);
-const DEF=()=>({cfg:{kgNet:3,kgTube:0.31,sh:6},
-  ord:{nr:"",lot:"",idx:"",kg:0,kgh:0,pairKgh:1,dl:"",pack:0,packKg:0,packLog:[]},
+const DEF=()=>({cfg:{kgNet:3,sh:6,cycMin:0},
+  ord:{nr:"",lot:"",idx:"",kg:0,kgh:0,pairKgh:1,dl:"",pack:0,packKg:0,packLog:[],palIds:[]},
   stock:mkG(),shift:mkG(),shB:{zryw:0,wlok:0},
   zryw:0,zrywCycle:0,zrywKg:0,zrywShift:0,zrywPosMs:0,zrywSince:Date.now(),zrywPkg:[],
   zrywPos:[],zrywCycPos:[],wlokPos:[],zrywKgPos:{},journal:[],
   wlok:0,wlokShift:0,launched:0,labSet:null,
-  state:"run",stateSince:Date.now(),odpShift:0,konShift:0,events:[],
+  state:"run",stateSince:Date.now(),odpShift:0,konShift:0,events:[],reDoff:false,
   obciag:0,shiftDoffs:0,utyl:{n:0,kg:0},spd:0,firstDoff:0,
   doffStart:Date.now(),log:[],dwDoff:0,dwShift:0,shKey:""});
 const SEED={
@@ -481,11 +498,18 @@ const T={pl:{
  launchNote:"Domyślnie wszystkie {p}. Zmniejsz, gdy pozycja w ogóle nie ruszyła albo zerwało ją zaraz po przewleczeniu i kręcisz dalej bez niej — nawój jest wtedy pusty. Gdy zerwało w trakcie i nawój ma już wagę, użyj licznika zrywów niżej.",
  launchFlag:"Puszczono {n} z {p} — nitka z {d} poz. leci w odpad przez cały cykl",
  stopSince:"od {t} · {d}",paused:"{s} — waga nawojów stoi",
- lnHead:"Linia",ospd:"Prędkość nawijania (m/min)",
- scan:"Zeskanuj kod z bloczka",scanOk:"Wczytano nr zlecenia {n}",
+ cfgT:"Ustawienia linii i zlecenia",ospd:"Prędkość nawijania (m/min)",
+ cycT:"Czas nawijania z panelu maszyny",cycEl:"Namotane (min)",cycLeft:"Do końca (min)",
+ cycTot:"Cały cykl (min)",cycApply:"Ustaw z panelu",
+ cycNote:"Wpisz albo cały cykl, albo namotane i do końca — wtedy suma da cykl, a „do końca” ustawi odliczanie na teraz.",
+ cycOk:"Cykl {c} min, podmiana o {t}",cycNo:"Wpisz cały cykl albo oba pola z panelu",
+ jCyc:"Cykl z panelu: {n} min",
+ scan:"Zeskanuj kod — bloczek albo paleta",scanOk:"Wczytano nr zlecenia {n}",
+ scanPal:"Paleta: {n} szt · {kg} kg netto · lot {lot}\n≈ {per} kg na nawój, w aplikacji {cur} kg\n\nDopisać do spakowanych?",
+ scanPalOk:"Dopisano paletę {kg} kg",scanDup:"Ta paleta była już zeskanowana",
  scanNone:"Nie znalazłem kodu na zdjęciu — spróbuj z bliska i przy dobrym świetle",
  scanNo:"Ta przeglądarka nie czyta kodów kreskowych — wpisz numer ręcznie",
- scanNote:"Aparat czyta kod kreskowy z bloczka i wpisuje numer zlecenia.",
+ scanNote:"Z bloczka aparat czyta numer zlecenia. Z etykiety palety QR podaje indeks, lot, wagę netto i liczbę nawojów — waga dopisuje się do spakowanych.",
  spdNote:"Z prędkości i wydajności wychodzi {d} dtex, nawój ≈ {m} m — porównaj z bloczkiem",
  obc:"Obciąg nr",obc0:"Obciąg 0 — nie liczy się jako produkcja, idzie do utylizacji",
  probaFlag:"Próba — ten obciąg nie wchodzi do produkcji",
@@ -495,7 +519,11 @@ const T={pl:{
  odpNote:"Przy przewlekaniu nitka ze wszystkich pozycji leci w odpad, więc waga nawojów nie rośnie. Naciśnij „Maszyna puszczona” dokładnie w chwili startu.",
  evT:"Zdarzenia na zmianie",evRun:"Puszczona",evOdpad:"Odpad",evStop:"Postój",
  zryw:"Zrywy i włókienka",pozZryw:"Zryw — dotknij pozycji",pozWlok:"Włókienko — dotknij pozycji",
- noDoff:"Nie podmieniła",noDoffOk:"Zapisano: nie podmieniła",
+ noDoff:"Nie podmieniła",noDoffOk:"Zapisano — przewlecz maszynę i naciśnij „Maszyna puszczona”",
+ noDoffAsk:"Maszyna nie podmieniła, więc trzeba przewlec wszystkie pozycje. Przełączyć na odpad?",
+ doffAtNote:"Puste pole = zapisz wszystkie podmiany, które już się odbyły. Wpisana godzina = ta jedna.",
+ catchAsk:"Od ostatniej podmiany minęło {n} godzin podmiany ({a} – {b}). Zapisać je? Wcześniejsze wejdą jako pełne A1, ostatnią opiszesz sam.",
+ catchOk:"Zapisano {n} zaległych podmian",
  jrnT:"Dziennik zmiany",jrnEmpty:"Jeszcze nic się nie wydarzyło",
  jrnNote:"Wszystko z godziną. Postój, awaria i odpad dostają czas trwania w chwili puszczenia maszyny.",
  jObc:"Podmiana nr {n} — {a}",jNoObc:"Nie podmieniła — obciąg {n}",
@@ -544,9 +572,9 @@ const T={pl:{
  joint:"Zlecenie wspólne: {l}",runFlag:"W ruchu: {l}",allStop:"Wszystkie maszyny zlecenia stoją",
  marginOk:"Zapas do terminu: {t}",marginBad:"Przekroczenie terminu o {t}",marginNo:"Wpisz termin i wydajność",
  srcRe:"Prognoza wg {n} zmierzonych podmian",srcZl:"Prognoza wg zlecenia — bez przestojów",
- set:"Ustawienia maszyny",pos:"Nawoje na podmianę",palN:"Norma palety",kgnet:"Masa nawoju netto (kg)",
- tube:"Waga cewki (kg)",sh1:"Start zmiany dziennej",gross:"Nawój brutto (kg)",
- kghint:"Masa nawoju zmienia się razem z artykułem — sprawdzaj przy każdym nowym zleceniu.",
+ pos:"Nawoje na podmianę",palN:"Norma palety",kgnet:"Masa nawoju netto (kg)",
+ sh1:"Start zmiany dziennej",
+ kghint:"Masa nawoju netto, bez cewki — zmienia się razem z artykułem. Wpisz masę pełnego nawoju, a nie tę, którą panel pokazuje w trakcie nawijania.",
  dbT:"Baza raportów",dbUse:"Zajęte miejsce",dbIdb:"IndexedDB · {n} zmian",
  dbLs:"Pamięć przeglądarki · {n} zmian",dbPersist:" · trwała",
  logT:"Ostatnie podmiany",clearLog:"Wyczyść historię podmian",logAsk:"Usunąć historię podmian?",
@@ -554,8 +582,13 @@ const T={pl:{
  impAsk:"Wklej wyeksportowane dane:",impOk:"Wczytano",impBad:"Nieprawidłowe dane",nd:"brak danych",d:"d",
  doffTab:"Podmiany",schedT:"Harmonogram zmiany",firstT:"Pierwsza podmiana na zmianie",
  schedNote:"Każda nawijarka liczy się osobno. E1 podaje nitkę do N1A i N1B, ale nawijają niezależnie — zryw na jednej nie zatrzymuje drugiej, więc godziny podmian się rozjeżdżają.",
- schedEmpty:"Brak maszyn w produkcji",firstSet:"Ustaw",cyc:"cykl",
- noRate:"Brak wydajności — uzupełnij w zakładce maszyny",notRunning:"Nie nawija ({s})",
+ schedEmpty:"Brak maszyn w produkcji",
+ schedSum:"Do końca zmiany ({e}): {n} podmian · najbliższa {t} na {l}",firstSet:"Ustaw",cyc:"cykl",
+ noRate:"Brak wydajności — uzupełnij w zakładce maszyny",
+ cycMin:"Pełny cykl z panelu (min)",auto:"auto",cycSrcM:"z maszyny",
+ panelNote:"Na panelu „Czas nawijania” to czas już namotany, nie cały cykl. Pełny cykl to „Czas nawijania” + „Czas do końca nawoju”. „Masa nawoju” też rośnie w trakcie — pełny nawój waży tyle, ile pokazuje dopiero przy podmianie.",
+ cycDiff:"Panel podaje {m} min, a z wpisanych liczb wychodzi {c} min. Przy {m} min nawój waży {w} kg — popraw masę.",
+ cycBad:"Cykl {c} wygląda na błąd: {w} kg × {p} szt ÷ {k} kg/h. Sprawdź masę nawoju i wydajność.",notRunning:"Nie nawija ({s})",
  hmBad:"Godzina w formacie 0720 albo 7:20",
  firstOut:"{l} — {t}, poza bieżącą zmianą",
  hmHint:"Godzinę wpisz z klawiatury: 0720, 720 albo 7:20 — bez okienka z zegarem. Północ to 0000 albo 2400.",
@@ -597,11 +630,18 @@ const T={pl:{
  launchNote:"All {p} by default. Lower it when a position never started, or broke right after threading and you carry on without it — that package is empty. If it broke mid-cycle and the package already has weight, use the break counter below.",
  launchFlag:"{n} of {p} started — yarn from {d} pos. goes to waste for the whole cycle",
  stopSince:"since {t} · {d}",paused:"{s} — package weight on hold",
- lnHead:"Line",ospd:"Winding speed (m/min)",
- scan:"Scan the code on the order sheet",scanOk:"Order number {n} loaded",
+ cfgT:"Line and order settings",ospd:"Winding speed (m/min)",
+ cycT:"Winding time from the machine panel",cycEl:"Wound (min)",cycLeft:"Remaining (min)",
+ cycTot:"Full cycle (min)",cycApply:"Set from the panel",
+ cycNote:"Enter either the full cycle, or wound and remaining — their sum gives the cycle and \u201eremaining\u201d sets the countdown from now.",
+ cycOk:"Cycle {c} min, doffing at {t}",cycNo:"Enter the full cycle or both panel fields",
+ jCyc:"Cycle from the panel: {n} min",
+ scan:"Scan a code — order sheet or pallet",scanOk:"Order number {n} loaded",
+ scanPal:"Pallet: {n} pcs · {kg} kg net · lot {lot}\n\u2248 {per} kg per package, app has {cur} kg\n\nAdd to packed?",
+ scanPalOk:"Pallet {kg} kg added",scanDup:"This pallet was already scanned",
  scanNone:"No code found in the photo — try closer and in good light",
  scanNo:"This browser cannot read barcodes — type the number by hand",
- scanNote:"The camera reads the barcode on the order sheet and fills in the order number.",
+ scanNote:"From the order sheet the camera reads the order number. From a pallet label the QR gives the index, lot, net weight and package count — the weight is added to packed.",
  spdNote:"Speed and output imply {d} dtex, package ≈ {m} m — compare with the order sheet",
  obc:"Load no.",obc0:"Load 0 — not counted as production, it gets scrapped",
  probaFlag:"Trial — this load does not go into production",
@@ -611,7 +651,11 @@ const T={pl:{
  odpNote:"While re-threading, yarn from every position goes to waste, so package weight does not grow. Press \u201eMachine started\u201d at the exact moment of restart.",
  evT:"Events this shift",evRun:"Started",evOdpad:"Waste",evStop:"Stopped",
  zryw:"Breaks and filament faults",pozZryw:"Break — tap the position",pozWlok:"Filament fault — tap the position",
- noDoff:"Did not doff",noDoffOk:"Logged: did not doff",
+ noDoff:"Did not doff",noDoffOk:"Logged — re-thread the machine and press \u201eMachine started\u201d",
+ noDoffAsk:"The machine did not doff, so every position has to be re-threaded. Switch to waste?",
+ doffAtNote:"Empty field = record every doffing that has already happened. A time = that one only.",
+ catchAsk:"{n} doffing times have passed since the last one ({a} – {b}). Record them? The earlier ones go in as full A1, you describe the last one yourself.",
+ catchOk:"{n} missed doffings recorded",
  jrnT:"Shift journal",jrnEmpty:"Nothing has happened yet",
  jrnNote:"Everything is timestamped. Stops, breakdowns and waste get their duration the moment the machine starts again.",
  jObc:"Doffing no. {n} — {a}",jNoObc:"Did not doff — load {n}",
@@ -660,9 +704,9 @@ const T={pl:{
  joint:"Shared order: {l}",runFlag:"Running: {l}",allStop:"All machines on this order are stopped",
  marginOk:"Margin before due date: {t}",marginBad:"Past due date by {t}",marginNo:"Enter due date and output",
  srcRe:"Forecast from {n} measured doffings",srcZl:"Forecast per order sheet — no downtime",
- set:"Machine settings",pos:"Packages per doffing",palN:"Pallet size",kgnet:"Package net weight (kg)",
- tube:"Tube weight (kg)",sh1:"Day shift starts",gross:"Gross package (kg)",
- kghint:"Package weight changes with the article — check it on every new order.",
+ pos:"Packages per doffing",palN:"Pallet size",kgnet:"Package net weight (kg)",
+ sh1:"Day shift starts",
+ kghint:"Net package weight, without the tube — it changes with the article. Enter the weight of a full package, not the one the panel shows mid-winding.",
  dbT:"Report database",dbUse:"Space used",dbIdb:"IndexedDB · {n} shifts",
  dbLs:"Browser storage · {n} shifts",dbPersist:" · persistent",
  logT:"Recent doffings",clearLog:"Clear doffing history",logAsk:"Delete doffing history?",
@@ -670,8 +714,13 @@ const T={pl:{
  impAsk:"Paste exported data:",impOk:"Loaded",impBad:"Invalid data",nd:"no data",d:"d",
  doffTab:"Doffings",schedT:"Shift timetable",firstT:"First doffing of the shift",
  schedNote:"Each winder counts separately. E1 feeds both N1A and N1B, but they wind independently — a break on one does not stop the other, so their doffing times drift apart.",
- schedEmpty:"No machines in production",firstSet:"Set",cyc:"cycle",
- noRate:"No output figure — fill it in on the machine tab",notRunning:"Not winding ({s})",
+ schedEmpty:"No machines in production",
+ schedSum:"Until the end of the shift ({e}): {n} doffings · next {t} on {l}",firstSet:"Set",cyc:"cycle",
+ noRate:"No output figure — fill it in on the machine tab",
+ cycMin:"Full cycle from the panel (min)",auto:"auto",cycSrcM:"from the machine",
+ panelNote:"On the panel \u201eCzas nawijania\u201d is the time already wound, not the whole cycle. The full cycle is \u201eCzas nawijania\u201d + \u201eCzas do końca nawoju\u201d. \u201eMasa nawoju\u201d also grows as it winds — the full package weighs what it shows only at doffing.",
+ cycDiff:"The panel says {m} min, the entered figures give {c} min. At {m} min the package weighs {w} kg — correct the weight.",
+ cycBad:"A cycle of {c} looks wrong: {w} kg × {p} pcs ÷ {k} kg/h. Check the package weight and the output.",notRunning:"Not winding ({s})",
  hmBad:"Time as 0720 or 7:20",
  firstOut:"{l} — {t}, outside the current shift",
  hmHint:"Type the time on the keypad: 0720, 720 or 7:20 — no clock dialog. Midnight is 0000 or 2400.",
@@ -705,6 +754,7 @@ LINES.forEach(l=>{const d=DEF(),s=SEED[l.id]||{},o=db[l.id]||{};
   const oo={...d.ord,...(s.ord||{}),...(o.ord||{})};
   if(!oo.packKg&&oo.pack)oo.packKg=oo.pack*((o.cfg&&o.cfg.kgNet)||d.cfg.kgNet); /* migracja ze sztuk */
   if(!Array.isArray(oo.packLog))oo.packLog=[];
+  if(!Array.isArray(oo.palIds))oo.palIds=[];
   db[l.id]={...d,...s,...o,cfg:{...d.cfg,...(o.cfg||{})},ord:oo,
     stock:migG(o.stock,kn),shift:migG(o.shift||o.cnt,kn),
     shB:{zryw:0,wlok:0,...(o.shB||{})},log:o.log||[],events:o.events||[],
@@ -860,6 +910,11 @@ const labOn=id=>db[id].labSet===null?labAuto(id):!!db[id].labSet;
    Każde zdarzenie ma godzinę. Stany (postój, awaria, odpad, próba) dostają czas trwania
    dopiero w chwili zakończenia, czyli przy następnej zmianie stanu. */
 const STATEK=["odpad","awaria","stop","proba","koniec"];
+function jrnAt(id,ts,k,o){const d=db[id];
+  if(!Array.isArray(d.journal))d.journal=[];
+  d.journal.push(Object.assign({t:ts,k:k},o||{}));
+  d.journal.sort(function(a,b){return a.t-b.t;});
+  if(d.journal.length>300)d.journal=d.journal.slice(-300);}
 function jrn(id,k,o){const d=db[id];
   if(!Array.isArray(d.journal))d.journal=[];
   d.journal.push(Object.assign({t:Date.now(),k:k},o||{}));
@@ -889,7 +944,10 @@ const deadPos=id=>Math.max(0,POS(id)-windPos(id));               /* wszystko, co
 const effPos=id=>cleanPos(id);
 const perPos=id=>kghOne(id)/POS(id);
 const kghEff=id=>perPos(id)*windPos(id);
-const cycleTh=id=>{const p=perPos(id);return p>0?db[id].cfg.kgNet/p:0;};
+/* Panel maszyny podaje czas nawijania wprost. Jesli operator go wpisze, liczymy z niego,
+   bo to pomiar, a nie iloczyn dwoch recznie wpisanych liczb. */
+const cycleCalc=id=>{const p=perPos(id);return p>0?db[id].cfg.kgNet/p:0;};
+const cycleTh=id=>{const m=db[id].cfg.cycMin||0;return m>0?m/60:cycleCalc(id);};
 const LT=e=>typeof e==="number"?e:e.t, LD=e=>typeof e==="number"?0:(e.d||0);
 const RUNS=["run","proba"];                 /* nawija na nawoje */
 /* koniec — zlecenie skończone, nowego jeszcze nie ma; maszyna stoi, ale nic nie leci w odpad,
@@ -1019,9 +1077,9 @@ function buildDrawer(){const box=$("dlist");box.innerHTML="";
 const LBL={t_doff:"doff",t_nwDoff:"nwDoff",t_cycTh:"cycTh",t_cycRe:"cycRe",t_dwDoff:"dwDoff",
  t_zryw:"zryw",t_effPos:"effPos",t_zrywShift:"zrywShift",
  t_out:"out",t_kghr:"kghr",t_spr:"spr",t_kgshift:"kgshift",t_nwshift:"nwshift",
- t_dwShift:"dwShift",t_avail:"avail",t_odpShift:"odpShift",
+ t_dwShift:"dwShift",t_avail:"avail",t_odpShift:"odpShift",t_konShift:"konShift",
  t_feed:"feed",t_wind:"wind",t_lossR:"lossR",t_wound:"wound",t_lost:"lost",
- t_lnHead:"lnHead",t_ospd:"ospd",t_obc:"obc",t_utyl:"utyl",
+ t_cfgT:"cfgT",t_cycT:"cycT",t_cycEl:"cycEl",t_cycLeft:"cycLeft",t_cycTot:"cycTot",t_ospd:"ospd",t_obc:"obc",t_kgNw:"kgnet",t_utyl:"utyl",
  t_windPos:"windPos",t_zrywCycle:"zrywCycle",t_pozZryw:"pozZryw",t_pozWlok:"pozWlok",
  t_jrnT:"jrnT",t_histMach:"histMach",t_launched:"launched",t_launchedRow:"launchedRow",t_hand:"hand",t_kgNow:"kgNow",t_kgEnd:"kgEnd",
  t_doffLeft:"doffLeft",t_nwLeft:"nwLeft",t_pack:"pack",t_sum:"sum",t_kgsum:"kgsum",
@@ -1030,7 +1088,7 @@ const LBL={t_doff:"doff",t_nwDoff:"nwDoff",t_cycTh:"cycTh",t_cycRe:"cycRe",t_dwD
  t_shA1:"shA1",t_shA2:"shA2",t_shB:"shB",t_shBwhy:"shBwhy",
  t_ord:"ord",t_onr:"onr",t_olot:"olot",t_oidx:"oidx",t_okg:"okg",t_okgh:"okgh",t_odl:"odl",
  t_opack:"opack",t_oun:"oun",t_packIn:"packIn",t_omade:"omade",t_oleft:"oleft",t_oend:"oend",t_osh:"osh",t_pair:"pair",
- t_set:"set",t_pos:"pos",t_palN:"palN",t_kgnet:"kgnet",t_tube:"tube",t_sh1:"sh1",t_gross:"gross",
+ t_pos:"pos",t_palN:"palN",t_kgnet:"kgnet",t_sh1:"sh1",
  t_kghint:"kghint",t_dbT:"dbT",t_dbUse:"dbUse",t_labT:"labT",t_labGrade:"labGrade",t_stockT:"stockT",t_palT:"palT",
  t_notifT:"notifT",t_notifLead:"notifLead",
  t_histT:"histT",t_histMonth:"histMonth",t_histList:"histList",
@@ -1044,14 +1102,16 @@ function applyLang(){document.documentElement.lang=lang;
   $("odpNote").textContent=t("odpNote");$("notifNote").textContent=t("notifNote");
   $("btnNotif").textContent=NOTIF.on?t("notifOff"):t("notifOn");
   $("btnNoDoff").textContent=t("noDoff");$("jrnNote").textContent=t("jrnNote");
+  $("doffAtNote").textContent=t("doffAtNote");$("doffAt").placeholder=t("auto");
   $("btnScan").textContent=t("scan");$("scanNote").textContent=t("scanNote");
+  $("btnCyc").textContent=t("cycApply");$("cycNote").textContent=t("cycNote");
   $("btnPackAdd").textContent=t("packAdd");$("btnPackSet").textContent=t("packSet");
   $("btnPackUndo").textContent=t("packUndo");$("packHint").textContent=t("packNote");
   $("btnCsv").textContent=t("csv");$("btnCsvAll").textContent=t("csvAll");
   $("histNote").textContent=t("histNote");
   $("packNote").textContent=t("packNote");$("btnClearLog").textContent=t("clearLog");
   $("btnExport").textContent=t("exp");$("btnImport").textContent=t("imp");
-  $("dSub").textContent=t("pick");$("foot").textContent=t("app")+" 7.0";
+  $("dSub").textContent=t("pick");$("foot").textContent=t("app")+" 8.0";
   $("handNote").textContent=t("handNote");
   $("oPair").options[0].textContent=t("pairBoth");$("oPair").options[1].textContent=t("pairOne");
   document.querySelectorAll(".lang button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.l===lang)));}
@@ -1060,14 +1120,18 @@ document.querySelectorAll(".lang button").forEach(b=>b.onclick=()=>{lang=b.datas
 /* ---------- inputs ---------- */
 function loadInputs(){const d=S();
   $("sPos").value=POS(cur)+" szt";$("sPalN").value=PAL(cur)+" szt";
-  $("sKg").value=d.cfg.kgNet;$("sTube").value=d.cfg.kgTube;$("sShift").value=d.cfg.sh;
+  $("sKg").value=d.cfg.kgNet;$("sShift").value=d.cfg.sh;
   $("oNr").value=d.ord.nr;$("oLot").value=d.ord.lot;$("oIdx").value=d.ord.idx;
   $("oKg").value=d.ord.kg||"";$("oKgh").value=d.ord.kgh||"";$("oDl").value=d.ord.dl||"";
   $("oSpd").value=d.spd||"";
   $("oPair").value=String(d.ord.pairKgh?1:0);$("pairBox").hidden=!L_(cur).pair;
-  $("notifLead").value=String(NOTIF.min);}
+  $("notifLead").value=String(NOTIF.min);
+  $("cTot").value=d.cfg.cycMin||"";$("cEl").value="";$("cLeft").value="";
+  /* puste dane albo maszyna bez zlecenia — karta otwarta; wszystko wpisane i idzie — zwinieta */
+  const brak=!(d.ord.kgh>0)||!(d.cfg.kgNet>0)||!(d.ord.nr||"").trim()||d.state==="koniec";
+  $("cfgDet").open=brak;}
 const fnum=(el,d)=>{const v=parseFloat(String(el.value).replace(",","."));return isFinite(v)&&v>0?v:d;};
-[["sKg","kgNet",3],["sTube","kgTube",0.31]].forEach(([i,k,d])=>
+[["sKg","kgNet",3]].forEach(([i,k,d])=>
   $(i).oninput=()=>{S().cfg[k]=fnum($(i),d);save();paint();});
 $("sShift").onchange=()=>{S().cfg.sh=parseInt($("sShift").value,10);save();paint();};
 $("oPair").onchange=()=>{const v=$("oPair").value==="1"?1:0;S().ord.pairKgh=v;
@@ -1077,18 +1141,62 @@ $("oPair").onchange=()=>{const v=$("oPair").value==="1"?1:0;S().ord.pairKgh=v;
 $("btnScan").onclick=()=>{
   if(!("BarcodeDetector" in window)){toast(t("scanNo"));return;}
   $("scanFile").value="";$("scanFile").click();};
+/* Etykieta palety ma QR z pieciu pol rozdzielonych srednikiem:
+   ID;INDEKS;LOT;WAGA NETTO;ILOSC. Bloczek ma tylko numer zlecenia. */
+function parseScan(v){v=String(v||"").trim();if(!v)return null;
+  const p=v.split(";");
+  if(p.length>=5){
+    const kg=parseFloat(String(p[3]).replace(",",".")),n=parseInt(p[4],10);
+    if(isFinite(kg)&&kg>0&&isFinite(n)&&n>0)
+      return{type:"pal",id:p[0].trim(),idx:p[1].trim(),lot:p[2].trim(),kg:kg,n:n};}
+  if(/^\d{6,}$/.test(v))return{type:"ord",nr:v};
+  return{type:"raw",v:v};}
+
+function applyScan(r){const d=S();
+  if(r.type==="ord"){d.ord.nr=r.nr;const p=L_(cur).pair;if(p)db[p].ord.nr=r.nr;
+    save();loadInputs();paint();buildDrawer();toast(t("scanOk",{n:r.nr}));return;}
+  if(r.type==="pal"){
+    d.ord.palIds=d.ord.palIds||[];
+    if(r.id&&d.ord.palIds.indexOf(r.id)>=0){toast(t("scanDup"));return;}
+    const per=r.kg/r.n;
+    if(!confirm(t("scanPal",{n:r.n,kg:n1(r.kg),lot:r.lot,per:n1(per),cur:n1(d.cfg.kgNet)})))return;
+    if(!d.ord.idx)d.ord.idx=r.idx;
+    if(!d.ord.lot)d.ord.lot=r.lot;
+    if(r.id)d.ord.palIds.push(r.id);
+    packPush(r.kg,false);d.ord.packKg=+((d.ord.packKg||0)+r.kg).toFixed(2);
+    save();loadInputs();paint();buildDrawer();toast(t("scanPalOk",{kg:n1(r.kg)}));return;}
+  toast(t("scanNone"));}
+
 $("scanFile").onchange=async()=>{
   const f=$("scanFile").files&&$("scanFile").files[0];if(!f)return;
   try{
-    const det=new BarcodeDetector({formats:["code_128","code_39","ean_13","itf","codabar","qr_code"]});
+    const det=new BarcodeDetector({formats:["qr_code","code_128","code_39","ean_13","itf","codabar"]});
     const bmp=await createImageBitmap(f);
     const codes=await det.detect(bmp);
     if(!codes.length){toast(t("scanNone"));return;}
-    const v=String(codes[0].rawValue||"").trim();
-    if(!v){toast(t("scanNone"));return;}
-    S().ord.nr=v;const p=L_(cur).pair;if(p)db[p].ord.nr=v;
-    save();loadInputs();paint();buildDrawer();toast(t("scanOk",{n:v}));
+    /* na etykiecie sa dwa kody — bierzemy ten bogatszy */
+    let best=null;
+    codes.forEach(function(c){const r=parseScan(c.rawValue);
+      if(!r)return;
+      if(!best||(r.type==="pal"&&best.type!=="pal"))best=r;});
+    if(!best){toast(t("scanNone"));return;}
+    applyScan(best);
   }catch(e){toast(t("scanNone"));}};
+/* Panel podaje namotane i do konca; suma to pelny cykl, a „do konca” pozwala ustawic
+   odliczanie dokladnie na teraz, bez czekania na podmiane. */
+$("btnCyc").onclick=()=>{const d=S(),now=Date.now();
+  const el=parseInt($("cEl").value,10)||0;
+  const lf=parseInt($("cLeft").value,10)||0;
+  let tot=parseInt($("cTot").value,10)||0;
+  if(!tot&&el>0&&lf>0)tot=el+lf;
+  if(!tot){toast(t("cycNo"));return;}
+  d.cfg.cycMin=tot;
+  if(lf>0){d.doffStart=now-(tot-lf)*60000;d.dwDoff=0;}
+  else if(el>0){d.doffStart=now-el*60000;d.dwDoff=0;}
+  $("cTot").value=tot;
+  jrn(cur,"cyc",{n:tot});
+  save();paint();buildDrawer();
+  toast(t("cycOk",{c:tot,t:clk(d.doffStart+tot*60000)}));};
 $("oSpd").oninput=()=>{S().spd=fnum($("oSpd"),0);
   const p=L_(cur).pair;if(p&&(db[p].ord.nr||"").trim()===(S().ord.nr||"").trim())db[p].spd=S().spd;
   save();paint();};
@@ -1125,9 +1233,9 @@ $("zrywKg").oninput=()=>{S().zrywKg=Math.max(0,parseFloat(String($("zrywKg").val
 /* --- panel zapisu podmiany ---
    A1/A2 tylko dla pozycji bez wad (dzieli je waga),
    zryw i włókienko idą na B niezależnie od wagi. */
-let DP={a2:0,zryw:0,wlok:0,a2kg:0,zrywkg:0,wlokkg:0};
+let DP={a2:0,zryw:0,wlok:0,a2kg:0,zrywkg:0,wlokkg:0},DPAT=0;
 const dpA1=()=>Math.max(0,LAUNCH(cur)-DP.a2-DP.zryw-DP.wlok);
-function openDP(){const d=S(),kn=d.cfg.kgNet;
+function openDP(at){const d=S(),kn=d.cfg.kgNet;DPAT=at||Date.now();
   DP={a2:0,zryw:d.zrywCycle||0,wlok:d.wlok||0,a2kg:0,
       zrywkg:+((d.zrywKg||(d.zrywCycle||0)*kn/2)).toFixed(1),
       wlokkg:+(((d.wlok||0)*kn)).toFixed(1)};
@@ -1155,7 +1263,7 @@ document.querySelectorAll("[data-dp]").forEach(b=>b.onclick=()=>{
 const dpKg=(id,k)=>$(id).oninput=()=>{DP[k]=Math.max(0,parseFloat(String($(id).value).replace(",","."))||0);};
 dpKg("dpA2kg","a2kg");dpKg("dpZrywKg","zrywkg");dpKg("dpWlokKg","wlokkg");
 $("dpCancel").onclick=()=>{$("doffPanel").hidden=true;};
-$("dpSave").onclick=()=>{const d=S(),n=Date.now(),kn=d.cfg.kgNet,a1=dpA1();
+$("dpSave").onclick=()=>{const d=S(),n=DPAT||Date.now(),kn=d.cfg.kgNet,a1=dpA1();
   const bN=DP.zryw+DP.wlok, bKg=(DP.zryw?DP.zrywkg:0)+(DP.wlok?DP.wlokkg:0);
   const add={a1:{n:a1,kg:a1*kn},a2:{n:DP.a2,kg:DP.a2?DP.a2kg:0},b:{n:bN,kg:bKg}};
   const scrap=(d.obciag===0)||(d.state==="proba");
@@ -1166,15 +1274,43 @@ $("dpSave").onclick=()=>{const d=S(),n=Date.now(),kn=d.cfg.kgNet,a1=dpA1();
        d.shB.zryw+=DP.zryw;d.shB.wlok+=DP.wlok;}
   d.obciag=(d.obciag||0)+1;d.shiftDoffs=(d.shiftDoffs||0)+1;
   d.log.push({t:n,d:downNow(cur)});if(d.log.length>24)d.log=d.log.slice(-24);
-  jrn(cur,"obc",{n:d.obciag,a:"A1 "+a1+" · A2 "+DP.a2+" · B "+bN+(scrap?" → utylizacja":"")});
+  jrnAt(cur,n,"obc",{n:d.obciag,a:"A1 "+a1+" · A2 "+DP.a2+" · B "+bN+(scrap?" → utylizacja":"")});
   d.doffStart=n;d.dwDoff=0;d.zrywPos=[];d.zrywCycPos=[];d.wlokPos=[];d.zrywKgPos={};syncZ(cur);
   d.launched=POS(cur);d.notifDoff=0;d.notifPal=0;
   if(RUNS.indexOf(d.state)<0){const dt=n-d.stateSince;d.dwShift+=dt;
     if(WASTE.indexOf(d.state)>=0)d.odpShift+=dt;
     if(d.state==="koniec")d.konShift+=dt;d.stateSince=n;}
-  $("doffPanel").hidden=true;save();render();
+  $("doffPanel").hidden=true;$("doffAt").value="";DPAT=0;save();render();
   toast(scrap?t("utylOk",{n:a1+DP.a2+bN}):t("dpDone",{n:a1+DP.a2+bN}));};
-$("btnDoff").onclick=openDP;
+/* Maszyna podmienia sama o wyznaczonej godzinie. Puste pole = „nadrob wszystko do teraz”,
+   wpisana godzina = ta jedna podmiana. Wczesniejsze zaliczamy jako pelne A1, bo nikt
+   ich nie widzial — ostatnia operator opisuje recznie. */
+function missedDoffs(id){const d=db[id],c=cycMs(id);
+  if(c<=0)return[];
+  const base=d.doffStart+downNow(id),now=Date.now(),out=[];
+  let x=base+c;
+  while(x<=now&&out.length<24){out.push(x);x+=c;}
+  return out;}
+$("btnDoff").onclick=()=>{
+  const v=($("doffAt").value||"").trim();
+  if(v){const q=parseHM(v);
+    if(!q){toast(t("hmBad"));return;}
+    openDP(timeInShift(cur,q[0],q[1]).ts);return;}
+  const miss=missedDoffs(cur);
+  if(miss.length<=1){openDP(miss.length?miss[0]:Date.now());return;}
+  if(!confirm(t("catchAsk",{n:miss.length,a:clk(miss[0]),b:clk(miss[miss.length-1])})))return;
+  const d=S(),kn=d.cfg.kgNet;
+  for(let i=0;i<miss.length-1;i++){
+    const nn=LAUNCH(cur),scrap=(d.obciag===0)||(d.state==="proba");
+    if(scrap){d.utyl.n+=nn;d.utyl.kg+=nn*kn;}
+    else{d.stock.a1.n+=nn;d.stock.a1.kg+=nn*kn;
+         d.shift.a1.n+=nn;d.shift.a1.kg+=nn*kn;}
+    jrnAt(cur,miss[i],"obc",{n:d.obciag,a:"A1 "+nn+(scrap?" → utylizacja":"")});
+    d.obciag=(d.obciag||0)+1;d.shiftDoffs=(d.shiftDoffs||0)+1;
+    d.log.push({t:miss[i],d:0});}
+  if(d.log.length>24)d.log=d.log.slice(-24);
+  save();toast(t("catchOk",{n:miss.length-1}));
+  openDP(miss[miss.length-1]);};
 function setState(ns){const d=S(),n=Date.now();flushZryw(cur);
   if(RUNS.indexOf(d.state)<0){const dt=n-d.stateSince;   /* zamykamy poprzednią przerwę */
     d.dwDoff+=dt;d.dwShift+=dt;
@@ -1199,7 +1335,11 @@ $("btnStart").onclick=()=>{if(!confirm(t("startAsk")))return;
   d.notifDoff=0;d.notifPal=0;jrn(cur,"start");setState("run");toast(t("startOk"));};
 /* Maszyna puszczona = to samo zlecenie, przewleczone pozycje znów nawijają.
    Obciąg i waga na nawojach lecą dalej; zrywCycle zostaje, bo te nawoje pójdą na B. */
-$("btnResume").onclick=()=>{const d=S();flushZryw(cur);d.zrywPos=[];syncZ(cur);setState("run");};
+$("btnResume").onclick=()=>{const d=S();flushZryw(cur);d.zrywPos=[];syncZ(cur);
+  /* po nieudanej podmianie na pozycjach sa nowe cewki — cykl liczy sie od nowa */
+  if(d.reDoff){d.reDoff=false;d.doffStart=Date.now();d.dwDoff=0;
+    d.zrywCycPos=[];d.wlokPos=[];d.zrywKgPos={};syncZ(cur);}
+  setState("run");};
 /* „Puszczone pozycje" wracają przy podmianie na komplet (8 albo 6) — operator koryguje,
    jeśli faktycznie ruszyło mniej */
 /* Pozycje zaznacza się dotknięciem — wiadomo, która się zerwała, a nie tylko ile ich było. */
@@ -1238,7 +1378,11 @@ $("lMinus").onclick=()=>{const d=S();
     jrn(cur,"launch",{n:d.launched});}save();paint();buildDrawer();};
 
 /* maszyna mogła nie podmienić — to też jest zdarzenie zmiany */
-$("btnNoDoff").onclick=()=>{jrn(cur,"noobc",{n:S().obciag});save();paint();toast(t("noDoffOk"));};
+$("btnNoDoff").onclick=()=>{
+  if(!confirm(t("noDoffAsk")))return;
+  const d=S();jrn(cur,"noobc",{n:d.obciag});
+  d.reDoff=true;                       /* po przewleczeniu cykl startuje od zera */
+  setState("odpad");toast(t("noDoffOk"));};
 
 $("btnReset").onclick=()=>{if(confirm(t("resetAsk"))){S().shift=mkG();save();paint();toast(t("resetOk"));}};
 $("btnClearLog").onclick=()=>{if(confirm(t("logAsk"))){S().log=[];save();paint();}};
@@ -1286,8 +1430,7 @@ function palletAfterDoff(id){const d=db[id],norm=PAL(id);
     if(after>=norm)return{g:GN[g],n:after,norm};}
   return null;}
 
-function nextDoffAt(id){const d=db[id],cr=cycleRe(id),ct=cycleTh(id),c=cr>0?cr:ct;
-  return c>0?d.doffStart+c*HOUR+downNow(id):0;}
+function nextDoffAt(id){const tg=doffTarget(id);return tg?tg.ts:0;}
 
 function checkAlerts(){
   if(!NOTIF.on)return;
@@ -1325,7 +1468,8 @@ function paint(){
   const dwD=downNow(cur),stopped=paused(cur),card=$("doffCard");
   const ST={run:"run",proba:"stProba",odpad:"stOdpad",awaria:"stAwaria",stop:"stopped",koniec:"stKoniec"};
   const stName=t(ST[d.state]||"run");
-  if(cUse>0){const next=d.doffStart+cUse*HOUR+dwD,left=next-now;
+  const tgt=doffTarget(cur);
+  if(cUse>0&&tgt){const next=tgt.ts,left=next-now;
     $("cd").textContent=hms(Math.abs(left));
     $("doffInfo").innerHTML=stopped?t("paused",{s:stName}):(left>=0?t("at",{t:"<b>"+clk(next)+"</b>"}):"<b>"+t("late",{t:hm(-left)})+"</b>");
     card.classList.toggle("late",!stopped&&left<0);card.classList.toggle("soon",!stopped&&left>=0&&left<15*60000);
@@ -1342,6 +1486,7 @@ function paint(){
   [["btnOdpad","odpad"],["btnAwaria","awaria"],["btnStop","stop"],["btnProba","proba"],
    ["btnKoniec","koniec"]].forEach(([b,st])=>$(b).classList.toggle("back",d.state===st));
   $("vNwDoff").textContent=LAUNCH(cur)+" szt";
+  $("vKgNw").textContent=n1(c.kgNet)+" kg";
   const scrap=(d.obciag===0)||(d.state==="proba");
   $("vObc").textContent=d.obciag===0?"0":d.obciag;
   const of=$("obcFlag");of.hidden=!scrap;
@@ -1463,7 +1608,6 @@ function paint(){
   else{mg.className="flag n";mg.textContent=t("marginNo");}
   $("srcNote").textContent=rate>0?(anyRe?t("srcRe",{n:nLog}):t("srcZl")):"";
 
-  $("sGross").value=n1(c.kgNet+c.kgTube)+" kg";
   $("vDb").textContent=t(HIST.ok?"dbIdb":"dbLs",{n:HCOUNT})+(DBPERS?t("dbPersist"):"");
   $("vDbUse").textContent=DBUSE;
   paintJrn();
@@ -1474,7 +1618,7 @@ function paint(){
 }
 
 /* ---------- dziennik: render ---------- */
-const JL={koniec:"stKoniec",obc:"jObc",noobc:"jNoObc",zryw:"jZryw",zrywOff:"jZrywOff",wlok:"jWlok",wlokOff:"jWlokOff",
+const JL={koniec:"stKoniec",cyc:"jCyc",obc:"jObc",noobc:"jNoObc",zryw:"jZryw",zrywOff:"jZrywOff",wlok:"jWlok",wlokOff:"jWlokOff",
   run:"jRun",start:"jStart",first:"jFirst",launch:"jLaunch",
   odpad:"stOdpad",awaria:"stAwaria",stop:"stopped",proba:"stProba"};
 function paintJrn(){const d=S(),box=$("jrnBox");box.innerHTML="";
@@ -1510,7 +1654,8 @@ function paintStock(){
   const sb=$("stockBox");sb.innerHTML="";
   LINES.forEach(l=>{const d=db[l.id],card=document.createElement("div");card.className="mcard";
     const head=document.createElement("div");head.className="mhead";
-    head.innerHTML="<b>"+l.name+"</b><em>"+t("palN")+" "+PAL(l.id)+" · "+t("total")+" "+gN(d.stock)+"</em>";
+    head.innerHTML="<b>"+l.name+"</b><em>"+n1(d.cfg.kgNet)+" kg/szt · "+
+      t("palN")+" "+PAL(l.id)+" · "+t("total")+" "+gN(d.stock)+"</em>";
     card.appendChild(head);
     const grid=document.createElement("div");grid.className="three";
     G.forEach(g=>{const col=document.createElement("div");col.className="gcol";
@@ -1522,7 +1667,8 @@ function paintStock(){
       inp.oninput=()=>{const old=d.stock[g],avg=old.n>0?old.kg/old.n:d.cfg.kgNet;
         const nn=Math.max(0,parseInt(inp.value,10)||0);
         d.stock[g]={n:nn,kg:+(nn*avg).toFixed(2)};save();paintPal();
-        head.innerHTML="<b>"+l.name+"</b><em>"+t("palN")+" "+PAL(l.id)+" · "+t("total")+" "+gN(d.stock)+"</em>";};
+        head.innerHTML="<b>"+l.name+"</b><em>"+n1(d.cfg.kgNet)+" kg/szt · "+
+      t("palN")+" "+PAL(l.id)+" · "+t("total")+" "+gN(d.stock)+"</em>";};
       col.appendChild(inp);col.appendChild(sh);grid.appendChild(col);});
     card.appendChild(grid);sb.appendChild(card);});
   /* ile z tego przyszło na mojej zmianie — sumarycznie po wszystkich maszynach */
@@ -1556,10 +1702,21 @@ function paintPal(){
    Każda nawijarka liczy się osobno. E1 podaje nitkę do N1A i N1B, ale nawijają niezależnie:
    zryw na N1A nie zatrzymuje N1B, więc godziny podmian się rozjeżdżają. */
 function cycMs(id){const r=cycleRe(id);return (r>0?r:cycleTh(id))*HOUR;}
-function schedule(id,limit){const d=db[id],c=cycMs(id);
-  if(c<=0||!RUNS.includes(d.state))return[];
+/* Jesli godzina podmiany minela, a nikt nie nacisnal „Podmiana wykonana”, przeskakujemy
+   na kolejna — ale przez GRACE minut pokazujemy jeszcze te, ktora wlasnie minela,
+   zeby spoznienie bylo widoczne, a nie zniknelo w tej samej sekundzie. */
+const GRACE=20*60000;
+function doffTarget(id){const d=db[id],c=cycMs(id);
+  if(c<=0)return null;
+  const base=d.doffStart+downNow(id),el=Date.now()-base;
+  let n=Math.floor(el/c)+1; if(n<0)n=0;
+  const next=base+n*c, prev=base+(n-1)*c;
+  if(n>1&&Date.now()-prev<=GRACE)return{ts:prev,late:true,nr:n-1};
+  return{ts:next,late:false,nr:n};}
+function schedule(id,limit){const d=db[id],c=cycMs(id),tg=doffTarget(id);
+  if(c<=0||!tg||!RUNS.includes(d.state))return[];
   const end=bounds(id,Date.now()).end,out=[];
-  let t=d.doffStart+c+downNow(id);
+  let t=tg.ts;
   while(t<=end&&out.length<(limit||12)){out.push(t);t+=c;}
   return out;}
 /* Godzina wpisana ręcznie trafia w okno bieżącej zmiany, także tej przez północ.
@@ -1583,7 +1740,7 @@ function parseHM(v){const d=String(v).replace(/\D/g,"");if(!d.length)return null
   if(hh===24&&mm===0)hh=0;                 /* 2400 i 24 to polnoc, tak sie pisze w raportach */
   if(hh>23||mm>59)return null;return[hh,mm];}
 const hm2=(h,m)=>String(h).padStart(2,"0")+":"+String(m).padStart(2,"0");
-const STK={proba:"stProba",odpad:"stOdpad",awaria:"stAwaria",stop:"stopped"};
+const STK={proba:"stProba",odpad:"stOdpad",awaria:"stAwaria",stop:"stopped",koniec:"stKoniec"};
 
 /* Karty budujemy raz. Gdyby odświeżały się co sekundę, kasowałyby pole w trakcie pisania. */
 let DUI=null;
@@ -1616,6 +1773,27 @@ function buildFirst(){const fb=$("firstBox");fb.innerHTML="";DUI={};
     btn.onclick=apply;
     inp.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();inp.blur();apply();}};
     row.appendChild(inp);row.appendChild(obc);row.appendChild(btn);card.appendChild(row);
+    /* masa nawoju decyduje o cyklu, wiec stoi tu, a nie w zwinietych ustawieniach */
+    const row2=document.createElement("div");
+    row2.style.cssText="display:grid;grid-template-columns:1fr 110px;gap:8px;align-items:center;margin-top:8px";
+    const lab=document.createElement("span");
+    lab.style.cssText="font-size:.8rem;color:var(--dim)";lab.textContent=t("kgnet");
+    const kgi=document.createElement("input");
+    kgi.type="number";kgi.inputMode="decimal";kgi.min="0.1";kgi.step="0.1";
+    kgi.style.textAlign="center";kgi.value=d.cfg.kgNet;
+    kgi.oninput=function(){const v=parseFloat(String(kgi.value).replace(",","."));
+      if(isFinite(v)&&v>0){d.cfg.kgNet=v;save();updateFirst();paintSched();}};
+    row2.appendChild(lab);row2.appendChild(kgi);card.appendChild(row2);
+    const row3=document.createElement("div");
+    row3.style.cssText="display:grid;grid-template-columns:1fr 110px;gap:8px;align-items:center;margin-top:6px";
+    const lab3=document.createElement("span");
+    lab3.style.cssText="font-size:.8rem;color:var(--dim)";lab3.textContent=t("cycMin");
+    const cmi=document.createElement("input");
+    cmi.type="number";cmi.inputMode="numeric";cmi.min="0";cmi.placeholder=t("auto");
+    cmi.style.textAlign="center";cmi.value=d.cfg.cycMin||"";
+    cmi.oninput=function(){const v=parseInt(cmi.value,10);
+      d.cfg.cycMin=(isFinite(v)&&v>0)?v:0;save();updateFirst();paintSched();};
+    row3.appendChild(lab3);row3.appendChild(cmi);card.appendChild(row3);
     const info=document.createElement("div");info.className="log";info.style.marginTop="6px";
     card.appendChild(info);fb.appendChild(card);
     DUI[l.id]={inp,info,head};});}
@@ -1623,34 +1801,56 @@ function buildFirst(){const fb=$("firstBox");fb.innerHTML="";DUI={};
 function updateFirst(){if(!DUI)return;
   LINES.forEach(l=>{const u=DUI[l.id];if(!u)return;
     const d=db[l.id],c=cycMs(l.id);
-    u.head.innerHTML="<b>"+l.name+"</b><em>"+(c>0?t("cyc")+" "+hm(c):t("nd"))+
-      (d.state!=="run"?" · "+t(STK[d.state]):"")+"</em>";
+    const kO=kghOne(l.id),man=(d.cfg.cycMin||0)>0;
+    u.head.innerHTML="<b>"+l.name+"</b><em>"+(c>0?t("cyc")+" "+hm(c)+(man?" ("+t("cycSrcM")+")":""):t("nd"))+
+      " · "+n1(d.cfg.kgNet)+" kg × "+POS(l.id)+" szt"+(kO?" · "+n1(kO)+" kg/h":"")+
+      (d.state!=="run"?" · "+t(STK[d.state]||"run"):"")+"</em>";
     const nx=schedule(l.id,4);
-    if(nx.length)
+    /* cykl krotszy niz 20 min albo dluzszy niz 12 h prawie na pewno oznacza zla liczbe */
+    const cc=cycleCalc(l.id)*HOUR;
+    const diff=(d.cfg.cycMin||0)>0&&cc>0&&Math.abs(cc-c)/c>0.15;
+    const bad=c>0&&(c<20*60000||c>12*HOUR);
+    u.head.style.color=bad?"var(--bad)":"";
+    if(bad){u.info.innerHTML="<span style='color:var(--bad)'>"+
+        t("cycBad",{c:hm(c),w:n1(d.cfg.kgNet),p:POS(l.id),k:n1(kghOne(l.id))})+"</span><span></span>";}
+    else if(diff){u.info.innerHTML="<span style='color:var(--amber)'>"+
+        t("cycDiff",{m:Math.round(c/60000),c:Math.round(cc/60000),
+          w:n1(c/HOUR*perPos(l.id))})+"</span><span>"+(nx.length?clk(nx[0]):"")+"</span>";}
+    else if(nx.length)
       u.info.innerHTML="<span>"+t("nextIs")+" <b>"+clk(nx[0])+"</b></span><span>"+
         (nx.length>1?t("thenIs")+" "+nx.slice(1).map(clk).join(", "):"")+"</span>";
-    else{const why=c<=0?t("noRate"):t("notRunning",{s:t(STK[d.state]||"stopped")});
+    else{const why=c<=0?t("noRate"):t("notRunning",{s:t(STK[d.state]||"run")});
       u.info.innerHTML="<span style='color:var(--dim)'>"+why+"</span><span></span>";}});}
 
 function paintSched(){
-  let all=[];
-  LINES.forEach(l=>schedule(l.id,8).forEach(ts=>all.push({ts,id:l.id})));
-  all.sort((a,b)=>a.ts-b.ts);
+  const now=Date.now();let all=[];
+  LINES.forEach(l=>schedule(l.id,24).forEach(ts=>all.push({ts:ts,id:l.id})));
+  all.sort(function(a,b){return a.ts-b.ts;});
   const box=$("schedBox");box.innerHTML="";
   if(!all.length){box.innerHTML='<div style="color:var(--dim)">'+t("schedEmpty")+"</div>";return;}
-  all.slice(0,14).forEach(e=>{
-    const near=all.filter(x=>x!==e&&Math.abs(x.ts-e.ts)<=15*60000);
+  const end=bounds(cur,now).end;
+  const head=document.createElement("div");head.className="flag n";
+  head.style.margin="0 0 10px";
+  head.innerHTML=t("schedSum",{n:all.length,t:clk(all[0].ts),l:L_(all[0].id).name,e:clk(end)});
+  box.appendChild(head);
+  all.slice(0,40).forEach(function(e){
+    const near=all.filter(function(x){return x!==e&&Math.abs(x.ts-e.ts)<=15*60000;});
+    const soon=e.ts-now<=30*60000, late=e.ts<now;
     const r=document.createElement("div");r.className="log";
-    r.innerHTML="<span><b>"+clk(e.ts)+"</b> · "+L_(e.id).name+
-      (near.length?" <span style='color:var(--amber)'>"+t("collide")+" "+
-        near.map(x=>L_(x.id).name.split(" ").pop()).join(", ")+"</span>":"")+
-      "</span><span>"+hm(e.ts-Date.now())+"</span>";
+    r.style.padding="9px 0";
+    const col=late?"var(--bad)":(soon?"var(--amber)":"var(--ink)");
+    r.innerHTML="<span><b style='font-size:1.05rem;color:"+col+"'>"+clk(e.ts)+"</b>"+
+      "<span style=\'margin-left:8px\'>"+L_(e.id).name+"</span>"+
+      (near.length?"<br><span style=\'color:var(--amber);font-size:.8rem\'>"+t("collide")+" "+
+        near.map(function(x){return L_(x.id).name;}).join(", ")+"</span>":"")+
+      "</span><span style=\'color:"+col+"\'>"+(late?"−":"")+hm(Math.abs(e.ts-now))+"</span>";
     box.appendChild(r);});}
 
 function paintDoffs(full){
   rollShift();
   $("hLine").textContent=t("doffTab");$("hSub").textContent="";
-  $("schedNote").textContent=t("schedNote");$("hmHint").textContent=t("hmHint");
+  $("schedNote").textContent=t("schedNote");
+  $("hmHint").textContent=t("hmHint")+" "+t("panelNote");
   if(full||!DUI)buildFirst();
   paintSched();updateFirst();}
 
@@ -1756,7 +1956,13 @@ function render(){
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});
 histMigrate().then(function(){return HIST.refresh();}).then(function(){buildDrawer();});
 applyLang();loadInputs();render();
-setInterval(()=>{if(view==="line")paint();else if(view==="doffs")paintDoffs(false);},1000);
+function tick(){if(view==="line")paint();else if(view==="doffs")paintDoffs(false);else if(view==="stock")paintStock();}
+setInterval(tick,1000);
+/* Przy zgaszonym ekranie system wstrzymuje timer. Wszystko liczymy z zegara systemowego,
+   wiec wystarczy przerysowac natychmiast po powrocie — bez czekania na kolejne tykniecie. */
+["visibilitychange","focus","pageshow","resume"].forEach(function(ev){
+  (ev==="visibilitychange"?document:window).addEventListener(ev,function(){
+    if(!document.hidden)tick();});});
 if("serviceWorker" in navigator&&location.protocol.startsWith("http")){navigator.serviceWorker.register("./sw.js").catch(()=>{});}
 </script>
 </body>
