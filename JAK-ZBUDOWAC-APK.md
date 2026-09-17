@@ -114,6 +114,14 @@ Pod spodem, przy każdej maszynie, pole **Pierwsza podmiana na zmianie**. Wpisuj
 
 N1A i N1B mają własne godziny. Ekstruder E1 podaje nitkę do obu, ale nawijają niezależnie: zryw na N1A nie zatrzymuje N1B, więc po przewleczeniu jednej godziny rozjeżdżają się o tyle, ile trwał postój.
 
+## Stanowisko na zmianie
+
+Na górze bocznego menu wybierasz, gdzie jesteś: **Na górze**, **Na dole** albo **Wolne**.
+
+Na dole obsługujesz nawijanie — podmiany, gatunki, zrywy. Na górze ekstruder i przewlekanie; podmiany liczą się dalej normalnie.
+
+**Wolne** znaczy, że Cię nie ma. Obciągi liczą się dalej, żeby numeracja się nie rozjechała, ale nie wchodzą do raportu — w dzienniku stoi „Obciąg 37 — wolne, bez danych". Nikt wtedy nie zapisał sztuk ani gatunków, więc aplikacja ich nie zmyśla. Stanowisko widać w nagłówku raportu zmianowego.
+
 ## Raporty zmian
 
 W bocznym menu jest pozycja **Raporty zmian**. Każda zmiana zapisuje się sama w chwili zmiany warty — nic nie trzeba klikać. Archiwum trzyma **13 miesięcy**, starsze kasuje się automatycznie.
