@@ -114,6 +114,27 @@ Pod spodem, przy każdej maszynie, pole **Pierwsza podmiana na zmianie**. Wpisuj
 
 N1A i N1B mają własne godziny. Ekstruder E1 podaje nitkę do obu, ale nawijają niezależnie: zryw na N1A nie zatrzymuje N1B, więc po przewleczeniu jednej godziny rozjeżdżają się o tyle, ile trwał postój.
 
+## Przyciski maszyny
+
+Na ekranie maszyny są cztery przyciski — tylko to, czego używa się w trakcie zmiany:
+
+- **Start** — poszła produkcja. Widoczny, kiedy maszyna stoi.
+- **Stop** — maszyna przestaje nawijać, nitka leci w odpad.
+- **Awaria** — to samo, ale z powodem awarii.
+- **Podmiana** — ręczna podmiana przed czasem. Maszyna podmienia sama o wyliczonej godzinie; ten przycisk jest tylko wtedy, gdy trzeba zdjąć wcześniej.
+
+Każda przerwa w nawijaniu kończy obciąg i zaczyna następny, z kolejnym numerem. Jeśli na pozycji jest mniej niż 0,5 kg, aplikacja pyta, czy resztka idzie w odpad; powyżej wchodzi do produkcji z policzoną wagą i gatunkiem.
+
+Rzadkie przyciski — raz na zlecenie — siedzą w `Ustawienia linii i zlecenia`, w sekcji **Życie zlecenia**: `Start zlecenia` (ekstruder rusza, produkcji jeszcze nie ma), `Już produkcja` (wracam z wolnego do trwającej produkcji) i `Koniec produkcji` (zlecenie skończone, ekstruder wyłączony).
+
+## Zlecenie do wyczerpania koloru
+
+Część zleceń kończy się nie na ilości z bloczka, tylko wtedy, gdy skończy się barwnik — na bloczku stoi wtedy `do wyczerpania masterbatch`. W `Ustawienia linii i zlecenia → Życie zlecenia` jest na to przycisk **Do wyczerpania koloru**.
+
+Po włączeniu ilość z bloczka przestaje być granicą: maszyna kręci dalej w zwykłym trybie, zlecenie nie przechodzi w `Zakończone`, a zamiast prognozy końca stoi `gdy skończy się barwnik`. Powyżej ilości z bloczka nadwyżka pokazuje się ze znakiem plus, np. `+240 kg`.
+
+Przycisk jest przełącznikiem — wciśnięty świeci. Przy zleceniu wspólnym N1A i N1B ustawia się na obu nawijarkach naraz.
+
 ## Stanowisko na zmianie
 
 Na górze bocznego menu wybierasz, gdzie jesteś: **Na górze**, **Na dole** albo **Wolne**.
@@ -121,6 +142,16 @@ Na górze bocznego menu wybierasz, gdzie jesteś: **Na górze**, **Na dole** alb
 Na dole obsługujesz nawijanie — podmiany, gatunki, zrywy. Na górze ekstruder i przewlekanie; podmiany liczą się dalej normalnie.
 
 **Wolne** znaczy, że Cię nie ma. Obciągi liczą się dalej, żeby numeracja się nie rozjechała, ale nie wchodzą do raportu — w dzienniku stoi „Obciąg 37 — wolne, bez danych". Nikt wtedy nie zapisał sztuk ani gatunków, więc aplikacja ich nie zmyśla. Stanowisko widać w nagłówku raportu zmianowego.
+
+## Raport zmiany — poprawki
+
+Tabela raportu wylicza się z dziennika, ale **każde pole można poprawić** przed przepisaniem na papier: kilogramy A1 / A2 / B / C, numer obciągu, uwagi, godziny postoju i powód. Nagłówek też — numer operatora, wydajność i osobne pole `Uwagi do zmiany`.
+
+Pole wpisane ręcznie robi się **żółte**. Wyczyszczenie wraca do wartości wyliczonej, więc poprawki nie kasują pomiaru — leżą obok niego.
+
+Przy każdym numerze obciągu stoi **krzyżyk**: usuwa tę podmianę z raportu i odejmuje jej sztuki oraz kilogramy z magazynu. Działa tak samo na bieżącej zmianie i na zmianie z archiwum.
+
+Eksport CSV bierze wartości już po poprawkach.
 
 ## Raporty zmian
 
