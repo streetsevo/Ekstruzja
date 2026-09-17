@@ -663,6 +663,8 @@ const T={pl:{
  zryw:"Zrywy i włókienka",pozZryw:"Zryw — dotknij pozycji", pozBaran:"Baran - dotknij pozycji",tAdj:"Korekta zegara maszyny (min)",
  jPodm:"Podmieniła",jBaran:"Baran - pozycja {p}",jBaranOff:"Baran odwołany - pozycja {p}",
  jManual:"ręcznie",manAsk:"Podmienić teraz, przed czasem? Cykl zacznie się liczyć od nowa.",
+ manAsk2:"Podmiana teraz: {n} szt × {w} kg, nawijane {t}.\n\nCykl zacznie się liczyć od nowa. Zapisać?",
+ manAskLow:"Uwaga — nawoje są prawie puste: {n} szt × {w} kg, nawijane dopiero {t}.\n\nJeśli podmiana już była, nie zapisuj jej drugi raz. Zapisać mimo to?",
  manOk:"Podmiana zapisana, cykl liczy się od nowa",pozWlok:"Włókienko — dotknij pozycji",
  noDoff:"Nie podmieniła",noDoffOk:"Zapisano — przewlecz maszynę i naciśnij „Maszyna puszczona”",
  noDoffAsk:"Maszyna nie podmieniła, więc trzeba przewlec wszystkie pozycje. Przełączyć na odpad?",
@@ -843,6 +845,8 @@ const T={pl:{
  zryw:"Breaks and filament faults",pozZryw:"Break — tap the position", pozBaran:"Baran - tap the position",tAdj:"Machine clock correction (min)",
  jPodm:"Doffed",jBaran:"Baran - position {p}",jBaranOff:"Baran cleared - position {p}",
  jManual:"manual",manAsk:"Doff now, ahead of time? The cycle will restart.",
+ manAsk2:"Doffing now: {n} pcs × {w} kg, wound for {t}.\n\nThe cycle will restart. Save?",
+ manAskLow:"Careful — the packages are almost empty: {n} pcs × {w} kg, wound for only {t}.\n\nIf the doffing was already recorded, do not record it twice. Save anyway?",
  manOk:"Doffing saved, cycle restarted",pozWlok:"Filament fault — tap the position",
  noDoff:"Did not doff",noDoffOk:"Logged — re-thread the machine and press \u201eMachine started\u201d",
  noDoffAsk:"The machine did not doff, so every position has to be re-threaded. Switch to waste?",
@@ -1211,10 +1215,21 @@ function balance(id){const d=db[id],now=Date.now(),sb=bounds(id,now);
   const fed=feedKgh(id)*Math.max(0,elapsed-stopMs)/HOUR;
   const lost=Math.min(fed,odpadKg(id));
   return{fed,lost,wound:Math.max(0,fed-lost),elapsed,stopMs};}
-function cycleRe(id){const L=db[id].log;if(L.length<2)return 0;
-  const n=Math.min(L.length-1,6),a=L.slice(-n-1);let s=0,k=0;
-  for(let i=1;i<a.length;i++){const g=LT(a[i])-LT(a[i-1])-LD(a[i]);if(g>0){s+=g;k++;}}
-  return k?s/k/HOUR:0;}
+/* Cykl zmierzony bierzemy tylko z odstepow, ktore moga byc pelnym cyklem.
+   Obciag przerwany zrywem konczy sie wczesniej, a dwa nacisniecia "Podmiana" pod rzad
+   daja odstep paru minut — srednia z takich odstepow zbijala cykl do minut i caly
+   ekran (odliczanie, waga nawoju, prognoza) szedl w las. Bierzemy mediane odstepow
+   z okna wokol cyklu teoretycznego; jak zaden nie pasuje, zostaje cykl z bloczka. */
+function cycleRe(id){const L=db[id].log;if(!L||L.length<2)return 0;
+  const th=cycleTh(id)*HOUR;
+  const lo=Math.max(20*60000,th>0?th*0.4:0), hi=th>0?th*2.5:Infinity;
+  const n=Math.min(L.length-1,6),a=L.slice(-n-1),g=[];
+  for(let i=1;i<a.length;i++){const x=LT(a[i])-LT(a[i-1])-LD(a[i]);
+    if(x>=lo&&x<=hi)g.push(x);}
+  if(!g.length)return 0;
+  g.sort(function(p,q){return p-q;});
+  const m=g.length%2?g[(g.length-1)/2]:(g[g.length/2-1]+g[g.length/2])/2;
+  return m/HOUR;}
 const kghRe=id=>{const c=cycleRe(id);return c>0?db[id].cfg.kgNet*POS(id)/c:0;};
 
 /* prędkość nawijania pozwala sprawdzić, czy wydajność i masa nawoju trzymają się kupy */
@@ -1666,7 +1681,13 @@ function missedDoffs(id){const d=db[id],c=cycMs(id);
 $("btnDoff").onclick=()=>{
   const v=($("doffAt").value||"").trim();
   if(!v){
-    if(!confirm(t("manAsk")))return;
+    /* Pokazujemy, co wpadnie do zapisu. Podmiana chwile po poprzedniej to prawie pusty
+       nawoj — lepiej, zeby operator zobaczyl te wage, zanim potwierdzi. */
+    const hv=handover(cur),el=Math.max(0,Date.now()-S().doffStart-downNow(cur));
+    const ask=hv.one<PROG_ODPAD
+      ?t("manAskLow",{n:LAUNCH(cur),w:n1(hv.one),t:hm(el)})
+      :t("manAsk2",{n:LAUNCH(cur),w:n1(hv.one),t:hm(el)});
+    if(!confirm(ask))return;
     registerDoff(cur,Date.now(),"man");save();render();toast(t("manOk"));return;}
   if(v){const q=parseHM(v);
     if(!q){toast(t("hmBad"));return;}
@@ -2283,7 +2304,11 @@ const GRACE=20*60000;
 function doffTarget(id){const d=db[id],c=cycMs(id);
   if(c<=0)return null;
   const base=d.doffStart+downNow(id)+(d.cfg.tAdj||0)*60000,el=Date.now()-base;
-  let n=Math.floor(el/c)+1; if(n<0)n=0;
+  /* n to numer nastepnej podmiany liczac od ostatniej. Nigdy nie schodzi ponizej 1:
+     przez pierwsze minuty po podmianie korekta zegara wypycha "base" w przyszlosc,
+     el wychodzi ujemne i n=0 pokazywalo jako nastepna te podmiane, ktora wlasnie byla —
+     odliczanie stawalo na paru minutach zamiast na pelnym cyklu. */
+  let n=Math.floor(el/c)+1; if(n<1)n=1;
   const next=base+n*c, prev=base+(n-1)*c;
   if(n>1&&Date.now()-prev<=GRACE)return{ts:prev,late:true,nr:n-1};
   return{ts:next,late:false,nr:n};}
