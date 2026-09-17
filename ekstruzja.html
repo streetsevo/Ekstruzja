@@ -569,6 +569,7 @@ const LINES=[
 const L_=id=>LINES.find(l=>l.id===id), POS=id=>L_(id).pos, PAL=id=>L_(id).pal;
 /* C to odpad, nie gatunek produkcji — nie wchodzi do magazynu, palet ani zlecenia.
    G  — gatunki liczone jako produkcja.  GC — kolumny raportu, razem z C. */
+const APPV="v51";
 const G=["a1","a2","b"], GC=["a1","a2","b","c"], GN={a1:"A1",a2:"A2",b:"B",c:"C"};
 
 const mkG=()=>({a1:{n:0,kg:0},a2:{n:0,kg:0},b:{n:0,kg:0},c:{n:0,kg:0}});
@@ -1367,7 +1368,9 @@ function applyLang(){document.documentElement.lang=lang;
   ["roleGora","roleDol","roleOff"].forEach(function(b,i){
     $(b).textContent=t(["roleG","roleD","roleO"][i]);});
   $("t_roleT").textContent=t("roleT");paintRole();
-  $("dSub").textContent=t("pick");$("foot").textContent=t("app")+" 8.0";
+  /* Wersja na wierzchu: latwo sprawdzic, czy telefon ma juz nowa wersje,
+     czy siedzi jeszcze na starej z pamieci podrecznej. */
+  $("dSub").textContent=t("pick")+" \u00b7 "+APPV;$("foot").textContent=t("app")+" "+APPV;
   $("handNote").textContent=t("handNote");
   $("oPair").options[0].textContent=t("pairBoth");$("oPair").options[1].textContent=t("pairOne");
   document.querySelectorAll(".lang button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.l===lang)));}
@@ -1950,8 +1953,12 @@ function paint(){
   const dwD=downNow(cur),stopped=paused(cur),card=$("doffCard");
   const ST={run:"run",proba:"stProba",odpad:"stOdpad",awaria:"stAwaria",stop:"stopped",koniec:"stKoniec",rozruch:"stRozruch"};
   const stName=t(ST[d.state]||"run");
-  const tgt=doffTarget(cur);
-  if(cUse>0&&tgt){const next=tgt.ts,left=next-now;
+  const tgt=cycSick(cur)?null:doffTarget(cur);
+  if(cycSick(cur)){$("cd").textContent="--:--:--";
+    $("doffInfo").innerHTML="<b style=\'color:var(--bad)\'>"+
+      t("cycBad",{c:hm(cUse*HOUR),w:n1(c.kgNet),p:POS(cur),k:n1(kghOne(cur))})+"</b>";
+    card.classList.remove("late","soon");}
+  else if(cUse>0&&tgt){const next=tgt.ts,left=next-now;
     $("cd").textContent=hms(Math.abs(left));
     $("doffInfo").innerHTML=stopped?t("paused",{s:stName}):(left>=0?t("at",{t:"<b>"+clk(next)+"</b>"}):"<b>"+t("late",{t:hm(-left)})+"</b>");
     card.classList.toggle("late",!stopped&&left<0);card.classList.toggle("soon",!stopped&&left>=0&&left<15*60000);
@@ -2297,6 +2304,10 @@ function paintPal(){
    Każda nawijarka liczy się osobno. E1 podaje nitkę do N1A i N1B, ale nawijają niezależnie:
    zryw na N1A nie zatrzymuje N1B, więc godziny podmian się rozjeżdżają. */
 function cycMs(id){const r=cycleRe(id);return (r>0?r:cycleTh(id))*HOUR;}
+/* Cykl krotszy niz 20 min albo dluzszy niz 12 h to prawie na pewno zle wpisana
+   liczba. Automat podmian wtedy stoi — wiec i odliczanie nie ma prawa udawac,
+   ze cos jest nalezne; zamiast czerwonego "Opoznienie" mowimy, co jest nie tak. */
+function cycSick(id){const c=cycMs(id);return c>0&&(c<20*60000||c>12*HOUR);}
 /* Jesli godzina podmiany minela, a nikt nie nacisnal „Podmiana wykonana”, przeskakujemy
    na kolejna — ale przez GRACE minut pokazujemy jeszcze te, ktora wlasnie minela,
    zeby spoznienie bylo widoczne, a nie zniknelo w tej samej sekundzie. */
