@@ -201,6 +201,11 @@
           <label><span id="t_ospd"></span><input id="oSpd" type="number" inputmode="decimal" min="0" placeholder="2052"></label>
           <label><span id="t_kgnet"></span><input id="sKg" type="number" inputmode="decimal" min="0.1" step="0.1"></label>
         </div>
+        <div class="two">
+          <label><span id="t_progA1"></span><input id="sProg" type="number" inputmode="decimal" min="0.1" step="0.1"></label>
+          <label><span id="t_progInfo"></span><input id="sProgInfo" readonly></label>
+        </div>
+        <div class="hint" id="progHint" style="margin:-6px 0 12px"></div>
         <div class="hint" id="spdNote"></div>
         <div class="hint warn" id="t_kghint"></div>
 
@@ -228,6 +233,12 @@
           <div id="t_dbT"></div><div class="num" id="vDb">–</div>
           <div id="t_dbUse"></div><div class="num" id="vDbUse">–</div>
         </div>
+        <div id="t_zycieT" style="font-size:.8rem;font-weight:700;color:var(--ink);margin:4px 0 8px"></div>
+        <button class="btn ghost" id="btnStart" style="margin-top:0"></button>
+        <button class="btn ghost" id="btnAlready" style="margin-top:8px"></button>
+        <button class="btn ghost" id="btnKoniec" style="margin-top:8px"></button>
+        <div class="hint" id="zycieNote" style="margin:8px 0 14px"></div>
+
         <div id="logBox"></div>
         <button class="btn ghost" id="btnClearLog" style="margin-top:12px"></button>
         <button class="btn ghost" id="btnExport" style="margin-top:8px"></button>
@@ -240,14 +251,9 @@
     <h2 id="t_doff"></h2>
     <div class="status"><i class="dot" id="dot"></i><b id="stText"></b></div>
     <div id="stBtns" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 14px 12px">
-      <button class="tgl" id="btnOdpad"></button>
-      <button class="tgl" id="btnAwaria"></button>
-      <button class="tgl" id="btnStop"></button>
-      <button class="tgl" id="btnProba"></button>
-      <button class="tgl" id="btnKoniec" style="grid-column:1/-1"></button>
       <button class="tgl back" id="btnResume" style="grid-column:1/-1" hidden></button>
-      <button class="tgl" id="btnAlready" style="grid-column:1/-1"></button>
-      <button class="tgl" id="btnStart" style="grid-column:1/-1"></button>
+      <button class="tgl" id="btnStop"></button>
+      <button class="tgl" id="btnAwaria"></button>
     </div>
     <div class="pad">
       <div class="clock num" id="cd">--:--:--</div>
@@ -266,7 +272,6 @@
         <button class="btn" id="btnDoff" style="margin-top:0"></button>
       </div>
       <div class="hint" id="doffAtNote" style="margin:8px 0 0"></div>
-      <button class="btn ghost" id="btnNoDoff" style="margin-top:8px"></button>
       <div class="rows" style="margin-top:12px">
         <div id="t_obc"></div><div class="num" id="vObc">–</div>
         <div id="t_nwDoff"></div><div class="num" id="vNwDoff">–</div>
@@ -562,13 +567,13 @@ function migG(o,kgNet){const r=mkG();if(!o)return r;
   return r;}
 const gN=o=>G.reduce((a,g)=>a+o[g].n,0);
 const gKG=o=>G.reduce((a,g)=>a+o[g].kg,0);
-const DEF=()=>({cfg:{kgNet:3,sh:6,cycMin:0,tAdj:0},
+const DEF=()=>({cfg:{kgNet:3,progA1:3,sh:6,cycMin:0,tAdj:0},
   ord:{nr:"",lot:"",idx:"",kg:0,kgh:0,pairKgh:1,st:"",dl:"",pack:0,packKg:0,packLog:[],palIds:[]},
   stock:mkG(),shift:mkG(),shB:{zryw:0,wlok:0},
   zryw:0,zrywCycle:0,zrywKg:0,zrywShift:0,zrywPosMs:0,zrywSince:Date.now(),zrywPkg:[],
   zrywPos:[],zrywCycPos:[],wlokPos:[],baranPos:[],zrywKgPos:{},journal:[],autoDoff:true,
   wlok:0,wlokShift:0,launched:0,labSet:null,
-  state:"run",stateSince:Date.now(),odpShift:0,konShift:0,events:[],reDoff:false,preProd:false,
+  state:"run",stateSince:Date.now(),odpShift:0,konShift:0,events:[],preProd:false,
   obciag:0,shiftDoffs:0,utyl:{n:0,kg:0},spd:0,firstDoff:0,
   doffStart:Date.now(),log:[],dwDoff:0,dwShift:0,shKey:""});
 const SEED={
@@ -577,14 +582,15 @@ const SEED={
 
 const T={pl:{
  app:"Ekstruzja",pick:"Wybierz maszynę",vstock:"Magazyn i palety",day:"Zmiana dzienna",night:"Zmiana nocna",
- doff:"Najbliższa podmiana",doffBtn:"Podmiana wykonana",at:"o {t}",late:"Opóźnienie {t}",doffOk:"Zapisano podmianę",
+ doff:"Najbliższa podmiana",doffBtn:"Podmiana",at:"o {t}",late:"Opóźnienie {t}",doffOk:"Zapisano podmianę",
  nwDoff:"Nawoje z tej podmiany",cycTh:"Cykl wg zlecenia",cycRe:"Cykl zmierzony",dwDoff:"Postój od podmiany",
  run:"Produkcja",stopped:"Postój",stOdpad:"Odpad — przewlekanie",stAwaria:"Awaria — nitka w odpad",
  stProba:"Próba — nowy asortyment",stKoniec:"Koniec produkcji — brak zlecenia",
  btnKoniec:"Koniec produkcji — ekstruder off",konShift:"Brak zlecenia na zmianie",
  konFlag:"Zlecenie skończone — maszyna czeka na nowe. Nowe uruchom przyciskiem „Start produkcji”.",
- btnOdpad:"Przewlekanie po zrywie",btnAwaria:"Awaria",btnStop:"Stop — nitka w odpad",btnProba:"Próba",
- btnStart:"Start zlecenia — ekstruder", btnAlready:"Już produkcja", roleT:"Gdzie jestem na zmianie",roleG:"Na górze",roleD:"Na dole",roleO:"Wolne",
+ btnAwaria:"Awaria",btnStop:"Stop",
+ btnStart:"Start zlecenia — ekstruder rusza", btnAlready:"Już produkcja", zycieT:"Życie zlecenia",
+ zycieNote:"Rzadkie przyciski, raz na zlecenie. Start zlecenia: ekstruder rusza, produkcji jeszcze nie ma. Już produkcja: wracam z wolnego do trwającej produkcji. Koniec produkcji: zlecenie skończone, ekstruder wyłączony.", roleT:"Gdzie jestem na zmianie",roleG:"Na górze",roleD:"Na dole",roleO:"Wolne",
  roleNoteD:"Na dole: nawijanie, podmiany i gatunki.",
  roleNoteG:"Na górze: ekstruder i przewlekanie. Podmiany liczą się dalej.",
  roleNoteOff:"Wolne: obciągi liczą się dalej, ale nie wchodzą do raportu — nikt nie zapisał sztuk ani gatunków.",
@@ -592,7 +598,7 @@ const T={pl:{
  alreadyAsk:"Produkcja już szła. Który obciąg schodzi teraz?",
  alreadyBad:"Podaj numer obciągu",alreadyOk:"Produkcja od obciągu {n}",
  jProd0:"Poszła produkcja — obciąg 0",jAlready:"Wejście w trwającą produkcję, obciąg {n}",
- jLost:"Zaczęty obciąg przepadł — {k} kg w odpad",btnResume:"Start — poszła produkcja",
+ jLost:"Zaczęty obciąg przepadł — {k} kg w odpad",btnResume:"Start",
  startAsk:"Start zlecenia: ekstruder rusza, produkcji jeszcze nie ma, nitka leci w odpad. Kontynuować?",
  startOk:"Nowe zlecenie — obciąg 0",
  windPos:"Pozycje nawijające",zrywCycle:"Zerwane w tym cyklu → B",
@@ -660,7 +666,7 @@ const T={pl:{
  zrywFroze:"Waga zamrożona w chwili zrywu: {l}",
  shiftLeft:"Do końca zmiany {t} · koniec {e}",
  hand:"Przekazanie zmiany",kgNow:"Na maszynie teraz",kgEnd:"Zostaje następnej zmianie",
- hA1:"Dokręcą się na A1",hBw:"Na B — włókienko",hBz:"Na B — zryw",
+ hA1:"Dokręcą się na A1",hStillA2:"na razie A2",hBw:"Na B — włókienko",hBz:"Na B — zryw",
  shiftCol:"z tej zmiany",stockShift:"Zdjęte na tej zmianie — wszystkie maszyny",
  doffLeft:"Podmian do końca zmiany",nwLeft:"Nawojów do zdjęcia",
  handNote:"Pozycje normalne liczone automatycznie, zerwane wpisujesz — razem tyle zostaje następnej zmianie.",
@@ -688,7 +694,8 @@ const T={pl:{
  joint:"Zlecenie wspólne: {l}",runFlag:"W ruchu: {l}",allStop:"Wszystkie maszyny zlecenia stoją",
  marginOk:"Zapas do terminu: {t}",marginBad:"Przekroczenie terminu o {t}",marginNo:"Wpisz termin i wydajność",
  srcRe:"Prognoza wg {n} zmierzonych podmian",srcZl:"Prognoza wg zlecenia — bez przestojów",
- pos:"Nawoje na podmianę",palN:"Norma palety",kgnet:"Masa nawoju netto (kg)",
+ pos:"Nawoje na podmianę",palN:"Norma palety",kgnet:"Masa nawoju netto (kg)", progA1:"Próg A1 (kg)",progInfo:"Osiągany po",
+ progHint:"Nawój bez wad od {p} kg to A1, poniżej A2 — niezależnie od masy nominalnej. Wada zawsze daje B.",
  sh1:"Start zmiany dziennej",
  kghint:"Masa nawoju netto, bez cewki — zmienia się razem z artykułem. Wpisz masę pełnego nawoju, a nie tę, którą panel pokazuje w trakcie nawijania.",
  dbT:"Baza raportów",dbUse:"Zajęte miejsce",dbIdb:"IndexedDB · {n} zmian",
@@ -737,14 +744,15 @@ const T={pl:{
  actNone:"Za mało na paletę",afterLab:"po obciągu",total:"Razem"},
  en:{
  app:"Extrusion",pick:"Select a machine",vstock:"Stock and pallets",day:"Day shift",night:"Night shift",
- doff:"Next doffing",doffBtn:"Doffing done",at:"at {t}",late:"Overdue by {t}",doffOk:"Doffing logged",
+ doff:"Next doffing",doffBtn:"Doffing",at:"at {t}",late:"Overdue by {t}",doffOk:"Doffing logged",
  nwDoff:"Packages from this doffing",cycTh:"Cycle per order sheet",cycRe:"Measured cycle",dwDoff:"Downtime since doffing",
  run:"Production",stopped:"Stopped",stOdpad:"Waste — re-threading",stAwaria:"Breakdown — yarn to waste",
  stProba:"Trial — new article",stKoniec:"Production finished — no order",
  btnKoniec:"Production finished — extruder off",konShift:"No order this shift",
  konFlag:"The order is finished and the machine is waiting. Start the next one with \u201eStart production\u201d.",
- btnOdpad:"Re-threading after a break",btnAwaria:"Breakdown",btnStop:"Stop — yarn to waste",btnProba:"Trial",
- btnStart:"Order start — extruder", btnAlready:"Already producing", roleT:"Where I am on the shift",roleG:"Upstairs",roleD:"Downstairs",roleO:"Day off",
+ btnAwaria:"Breakdown",btnStop:"Stop",
+ btnStart:"Order start — extruder on", btnAlready:"Already producing", zycieT:"Order lifecycle",
+ zycieNote:"Rare buttons, once per order. Order start: the extruder runs, there is no production yet. Already producing: joining production after days off. Production finished: the order is done, the extruder is off.", roleT:"Where I am on the shift",roleG:"Upstairs",roleD:"Downstairs",roleO:"Day off",
  roleNoteD:"Downstairs: winding, doffings and grades.",
  roleNoteG:"Upstairs: extruder and re-threading. Doffings keep counting.",
  roleNoteOff:"Day off: loads keep counting but do not enter the report — nobody recorded pieces or grades.",
@@ -752,7 +760,7 @@ const T={pl:{
  alreadyAsk:"Production was already running. Which load is coming off now?",
  alreadyBad:"Enter the load number",alreadyOk:"Production from load {n}",
  jProd0:"Production started — load 0",jAlready:"Joined ongoing production, load {n}",
- jLost:"Started load lost — {k} kg to waste",btnResume:"Start — production running",
+ jLost:"Started load lost — {k} kg to waste",btnResume:"Start",
  startAsk:"Order start: the extruder runs, there is no production yet, the yarn goes to waste. Continue?",
  startOk:"New order — load 0",
  windPos:"Positions winding",zrywCycle:"Broken this cycle → B",
@@ -820,7 +828,7 @@ const T={pl:{
  zrywFroze:"Weight frozen at the moment of the break: {l}",
  shiftLeft:"Shift ends in {t} · at {e}",
  hand:"Shift handover",kgNow:"On the machine now",kgEnd:"Left for the next shift",
- hA1:"Will finish as A1",hBw:"To B — filament fault",hBz:"To B — break",
+ hA1:"Will finish as A1",hStillA2:"A2 so far",hBw:"To B — filament fault",hBz:"To B — break",
  shiftCol:"this shift",stockShift:"Taken off this shift — all machines",
  doffLeft:"Doffings before shift end",nwLeft:"Packages still to take off",
  handNote:"Normal positions are calculated, broken ones you enter — that is what the next shift takes over.",
@@ -848,7 +856,8 @@ const T={pl:{
  joint:"Shared order: {l}",runFlag:"Running: {l}",allStop:"All machines on this order are stopped",
  marginOk:"Margin before due date: {t}",marginBad:"Past due date by {t}",marginNo:"Enter due date and output",
  srcRe:"Forecast from {n} measured doffings",srcZl:"Forecast per order sheet — no downtime",
- pos:"Packages per doffing",palN:"Pallet size",kgnet:"Package net weight (kg)",
+ pos:"Packages per doffing",palN:"Pallet size",kgnet:"Package net weight (kg)", progA1:"A1 threshold (kg)",progInfo:"Reached after",
+ progHint:"A package without faults from {p} kg is A1, below that A2 — regardless of the nominal weight. A fault always gives B.",
  sh1:"Day shift starts",
  kghint:"Net package weight, without the tube — it changes with the article. Enter the weight of a full package, not the one the panel shows mid-winding.",
  dbT:"Report database",dbUse:"Space used",dbIdb:"IndexedDB · {n} shifts",
@@ -1108,6 +1117,8 @@ const LT=e=>typeof e==="number"?e:e.t, LD=e=>typeof e==="number"?0:(e.d||0);
 const RUNS=["run","proba"];                 /* nawija na nawoje */
 /* Ponizej tego progu zaczety nawoj zwykle nie nadaje sie do niczego — pytamy operatora. */
 const PROG_ODPAD=0.5;
+/* Prog handlowy A1/A2 — domyslnie 3 kg, niezaleznie od masy nominalnej nawoju. */
+const progA1=id=>{const v=db[id].cfg.progA1;return (isFinite(v)&&v>0)?v:3;};
 /* koniec — zlecenie skończone, nowego jeszcze nie ma; maszyna stoi, ale nic nie leci w odpad,
    więc liczy się osobno od postoju technicznego */
 /* Kazdy stan, w ktorym ekstruder podaje, a nic sie nie nawija, karmi ten sam odpad:
@@ -1259,7 +1270,7 @@ const LBL={t_doff:"doff",t_nwDoff:"nwDoff",t_cycTh:"cycTh",t_cycRe:"cycRe",t_dwD
  t_shA1:"shA1",t_shA2:"shA2",t_shB:"shB",t_shC:"shC",t_shBwhy:"shBwhy",
  t_ord:"ord",t_onr:"onr",t_olot:"olot",t_oidx:"oidx",t_okg:"okg",t_okgh:"okgh",t_odl:"odl",
  t_opack:"opack",t_oun:"oun",t_packIn:"packIn",t_omade:"omade",t_oleft:"oleft",t_oend:"oend",t_osh:"osh",t_pair:"pair",
- t_pos:"pos",t_palN:"palN",t_kgnet:"kgnet",t_sh1:"sh1",
+ t_pos:"pos",t_palN:"palN",t_kgnet:"kgnet", t_progA1:"progA1",t_progInfo:"progInfo",t_sh1:"sh1",
  t_kghint:"kghint",t_dbT:"dbT",t_dbUse:"dbUse",t_labT:"labT",t_labGrade:"labGrade",t_stockT:"stockT",t_palT:"palT",
  t_notifT:"notifT",t_notifLead:"notifLead",
  t_rapT:"rapT",t_rapMach:"rapMach",t_rapShift:"rapShift",t_opNr:"opNr",t_histT:"histT",t_histMonth:"histMonth",t_histList:"histList",
@@ -1268,11 +1279,12 @@ function applyLang(){document.documentElement.lang=lang;
   for(const i in LBL){const e=$(i);if(e)e.textContent=t(LBL[i]);}
   $("btnDoff").textContent=t("doffBtn");$("btnReset").textContent=t("reset");
   $("dpSave").textContent=t("dpSave");$("dpCancel").textContent=t("dpCancel");
-  ["btnOdpad","btnAwaria","btnStop","btnProba","btnKoniec","btnStart","btnResume","btnAlready"]
+  ["btnAwaria","btnStop","btnKoniec","btnStart","btnResume","btnAlready"]
     .forEach(b=>$(b).textContent=t(b));
+  $("t_zycieT").textContent=t("zycieT");$("zycieNote").textContent=t("zycieNote");
   $("odpNote").textContent=t("odpNote");$("notifNote").textContent=t("notifNote");
   $("btnNotif").textContent=NOTIF.on?t("notifOff"):t("notifOn");
-  $("btnNoDoff").textContent=t("noDoff");$("jrnNote").textContent=t("jrnNote");
+  $("jrnNote").textContent=t("jrnNote");
   $("doffAtNote").textContent=t("doffAtNote");$("doffAt").placeholder=t("auto");
   $("jeSave").textContent=t("jeSave");$("jeDel").textContent=t("jeDel");
   $("jeCancel").textContent=t("jeCancel");
@@ -1297,7 +1309,7 @@ document.querySelectorAll(".lang button").forEach(b=>b.onclick=()=>{lang=b.datas
 /* ---------- inputs ---------- */
 function loadInputs(){const d=S();
   $("sPos").value=POS(cur)+" szt";$("sPalN").value=PAL(cur)+" szt";
-  $("sKg").value=d.cfg.kgNet;$("sShift").value=d.cfg.sh;
+  $("sKg").value=d.cfg.kgNet;$("sProg").value=progA1(cur);$("sShift").value=d.cfg.sh;
   $("oNr").value=d.ord.nr;$("oLot").value=d.ord.lot;$("oIdx").value=d.ord.idx;
   $("oKg").value=d.ord.kg||"";$("oKgh").value=d.ord.kgh||"";
   $("oDl").value=d.ord.dl||"";$("oSt").value=d.ord.st||"";
@@ -1309,7 +1321,7 @@ function loadInputs(){const d=S();
   const brak=!(d.ord.kgh>0)||!(d.cfg.kgNet>0)||!(d.ord.nr||"").trim()||d.state==="koniec";
   $("cfgDet").open=brak;}
 const fnum=(el,d)=>{const v=parseFloat(String(el.value).replace(",","."));return isFinite(v)&&v>0?v:d;};
-[["sKg","kgNet",3]].forEach(([i,k,d])=>
+[["sKg","kgNet",3],["sProg","progA1",3]].forEach(([i,k,d])=>
   $(i).oninput=()=>{S().cfg[k]=fnum($(i),d);save();paint();});
 $("sShift").onchange=()=>{S().cfg.sh=parseInt($("sShift").value,10);save();paint();};
 $("oPair").onchange=()=>{const v=$("oPair").value==="1"?1:0;S().ord.pairKgh=v;
@@ -1430,7 +1442,7 @@ function openDP(at){const d=S(),kn=d.cfg.kgNet;DPAT=at||Date.now();
       wlokkg:+(((d.wlok||0)*kn)).toFixed(1)};
   $("doffPanel").hidden=false;paintDP();
   $("doffPanel").scrollIntoView({behavior:"smooth",block:"start"});}
-function paintDP(){const p=LAUNCH(cur),w=n1(S().cfg.kgNet);
+function paintDP(){const p=LAUNCH(cur),w=n1(progA1(cur));
   $("t_dpA1").textContent=t("dpA1",{w});$("t_dpA2").textContent=t("dpA2",{w});
   $("t_dpZryw").textContent=t("dpZryw");$("t_dpWlok").textContent=t("dpWlok");
   $("t_dpC").textContent=t("dpC");
@@ -1493,7 +1505,10 @@ function registerDoff(id,ts,how){
   const f=faultPos(id),bad=f.all.length+f.w.length;   /* baran juz w f.all */
   const good=Math.max(0,LAUNCH(id)-bad);
   const add=mkG();
-  if(wOne>=kn-0.001){add.a1.n=good;add.a1.kg=+(good*wOne).toFixed(2);}
+  /* Gatunek zalezy od progu handlowego, nie od masy nominalnej: nawoj bez wad
+     powyzej progu jest A1, nawet jesli nie doszedl do pelnej wagi. */
+  const prog=progA1(id);
+  if(wOne>=prog-0.001){add.a1.n=good;add.a1.kg=+(good*wOne).toFixed(2);}
   else{add.a2.n=good;add.a2.kg=+(good*wOne).toFixed(2);}
   add.b.n=bad;
   add.b.kg=+(f.all.reduce(function(a,p){return a+(d.zrywKgPos[p]||wOne);},0)
@@ -1581,10 +1596,8 @@ function setState(ns){const d=S(),n=Date.now();flushZryw(cur);
   jrn(cur,ns==="run"?"run":ns);
   d.events.push({t:n,s:ns});if(d.events.length>24)d.events=d.events.slice(-24);
   save();paint();buildDrawer();}
-$("btnOdpad").onclick=()=>setState("odpad");
 $("btnAwaria").onclick=()=>setState("awaria");
 $("btnStop").onclick=()=>setState("stop");
-$("btnProba").onclick=()=>setState("proba");
 $("btnKoniec").onclick=()=>setState("koniec");
 /* Start produkcji = nowe zlecenie / nowy typ nitki. Obciąg wraca na 0, cykl liczy się od nowa. */
 $("btnStart").onclick=()=>{if(!confirm(t("startAsk")))return;
@@ -1628,7 +1641,7 @@ $("btnResume").onclick=()=>{const d=S(),from=d.state,now=Date.now();
         jrn(cur,"lostLoad",{k:n1(all)});nowy();}
       else registerDoff(cur,now,"man");   /* liczy wage i gatunek, sam podnosi numer */
     }else nowy();
-    d.reDoff=false;}
+  }
   setState("run");};
 /* „Puszczone pozycje" wracają przy podmianie na komplet (8 albo 6) — operator koryguje,
    jeśli faktycznie ruszyło mniej */
@@ -1695,14 +1708,8 @@ $("lMinus").onclick=()=>{const d=S();
   if(LAUNCH(cur)>Math.max(1,d.zryw)){flushZryw(cur);d.launched=LAUNCH(cur)-1;
     jrn(cur,"launch",{n:d.launched});}save();paint();buildDrawer();};
 
-/* maszyna mogła nie podmienić — to też jest zdarzenie zmiany */
 $("tPlus").onclick=()=>{const d=S();d.cfg.tAdj=Math.min(10,(d.cfg.tAdj||0)+1);save();paint();};
 $("tMinus").onclick=()=>{const d=S();d.cfg.tAdj=Math.max(-10,(d.cfg.tAdj||0)-1);save();paint();};
-$("btnNoDoff").onclick=()=>{
-  if(!confirm(t("noDoffAsk")))return;
-  const d=S();jrn(cur,"noobc",{n:d.obciag});
-  d.reDoff=true;                       /* po przewleczeniu cykl startuje od zera */
-  setState("odpad");toast(t("noDoffOk"));};
 
 $("btnReset").onclick=()=>{if(confirm(t("resetAsk"))){S().shift=mkG();save();paint();toast(t("resetOk"));}};
 $("btnClearLog").onclick=()=>{if(confirm(t("logAsk"))){S().log=[];save();paint();}};
@@ -1813,8 +1820,9 @@ function paint(){
   $("stText").innerHTML=stName+'<em id="stSub"></em>';
   $("stSub").textContent=stopped?t("stopSince",{t:clk(d.stateSince),d:hm(now-d.stateSince)}):"";
   $("btnResume").hidden=!stopped;
-  [["btnOdpad","odpad"],["btnAwaria","awaria"],["btnStop","stop"],["btnProba","proba"],
-   ["btnKoniec","koniec"],["btnStart","rozruch"]].forEach(([b,st])=>$(b).classList.toggle("back",d.state===st));
+  $("btnStop").hidden=stopped;$("btnAwaria").hidden=stopped;
+  [["btnAwaria","awaria"],["btnStop","stop"],["btnKoniec","koniec"],["btnStart","rozruch"]]
+    .forEach(([b,st])=>$(b).classList.toggle("back",d.state===st));
   $("vNwDoff").textContent=LAUNCH(cur)+" szt";
   $("vKgNw").textContent=n1(c.kgNet)+" kg";
   const scrap=(d.obciag===0)||(d.state==="proba");
@@ -1840,7 +1848,12 @@ function paint(){
   $("vZrywCycle").textContent=d.zrywCycle;
   $("vEffPos").textContent=cleanPos(cur)+" / "+POS(cur);
   $("vZrywShift").textContent=d.zrywShift;$("vWlokShift").textContent=d.wlokShift;
-  $("gradeNote").textContent=t("gradeNote",{w:n1(c.kgNet)})+" · "+t("zrywNote");
+  $("gradeNote").textContent=t("gradeNote",{w:n1(progA1(cur))})+" · "+t("zrywNote");
+  /* po ilu minutach nawijania nawoj przekracza prog A1 */
+  const cT=cycleTh(cur)*HOUR,pr=progA1(cur);
+  const mins=(c.kgNet>0&&cT>0)?Math.ceil(pr/c.kgNet*cT/60000):0;
+  $("sProgInfo").value=mins?hm(mins*60000):"–";
+  $("progHint").textContent=t("progHint",{p:n1(pr)});
   const dt=dtexCalc(cur);
   $("spdNote").textContent=dt>0?t("spdNote",{d:n1(dt),m:n0(lenNw(cur))}):"";
   const zf=$("zrywFlag");zf.hidden=!(d.zryw||d.zrywCycle||d.wlok||LAUNCH(cur)<POS(cur));
@@ -1926,7 +1939,8 @@ function paint(){
     fl.textContent=real?t("ohFromReal",{h:n1(elapsed)}):t("ohFromTeor");})();
 
   const hv=handover(cur);
-  $("vHA1").textContent=hv.a1n+" szt · "+n1(hv.a1kg)+" kg";
+  $("vHA1").textContent=hv.a1n+" szt · "+n1(hv.a1kg)+" kg"+
+    (hv.one<progA1(cur)?" · "+t("hStillA2"):"");
   $("vHBw").textContent=hv.wn?hv.wn+" szt · "+n1(hv.wkg)+" kg":"–";
   $("vHBz").textContent=hv.zn?hv.zn+" szt · "+n1(hv.zkg)+" kg":"–";
   $("vHandNorm").textContent=effPos(cur)+" × "+n1(hv.one)+" kg";
