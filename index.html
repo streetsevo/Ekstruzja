@@ -195,6 +195,7 @@
           <label><span id="t_onr"></span><input id="oNr" inputmode="numeric" placeholder="872600213"></label>
           <label><span id="t_olot"></span><input id="oLot" placeholder="E1007P"></label>
         </div>
+        <div class="flag bad" id="nrFlag" hidden></div>
         <label><span id="t_oidx"></span><input id="oIdx" placeholder="POY-PP-…"></label>
         <div class="two">
           <label><span id="t_okg"></span><input id="oKg" type="number" inputmode="decimal" min="0" placeholder="1600"></label>
@@ -620,7 +621,13 @@ const T={pl:{
  startAskZero:"Start zlecenia: ekstruder rusza, produkcji jeszcze nie ma, nitka leci w odpad.\n\nPoprzednie zlecenie {nr}: {k} kg spakowane, {n} szt w magazynie — liczniki idą na zero, nowe zlecenie zaczyna się od 0 kg.\n\nKontynuować?",
  zeroAsk:"Zmieniasz zlecenie {nr} na inne.\n\nNa liczniku tej maszyny zostało: {k} kg spakowane, {n} szt w magazynie.\n\nZdjąć je z licznika, żeby nowe zlecenie zaczęło się od 0 kg?",
  zeroOk:"Zdjęto {k} kg z licznika zlecenia",
+ konAsk:"Koniec produkcji — ekstruder off.\n\nZlecenie {nr} zostaje zamknięte: {n} szt ({k} kg) niespakowanych liczy się jako spakowane, liczniki idą na zero, a numer znika z maszyny.\n\nKontynuować?",
+ konAsk0:"Koniec produkcji — ekstruder off.\n\nZlecenie {nr} zostaje zamknięte, numer znika z maszyny.\n\nKontynuować?",
+ konOk:"Zlecenie zamknięte — maszyna czeka na nowy bloczek",
+ nrBad:"Zlecenie {n} nie jest z tej linii — na {g} numer zaczyna się od {p}",
+ nrBadAsk:"Zły numer zlecenia dla {m}.\n\nNa linii {g} numer zlecenia zaczyna się od {p}. Sprawdź, czy bloczek trafił na właściwą maszynę.",
  jZero:"Zamknięte poprzednie zlecenie — {kg} kg, {n} szt zdjęte z licznika",
+ jEnd:"Koniec zlecenia {a} — {kg} kg, {n} szt zaliczone jako spakowane",
  windPos:"Pozycje nawijające",zrywCycle:"Zerwane w tym cyklu → B",
  launched:"Puszczone pozycje (wyjątek)",launchedRow:"Puszczone pozycje",
  launchNote:"Domyślnie wszystkie {p}. Zmniejsz, gdy pozycja w ogóle nie ruszyła albo zerwało ją zaraz po przewleczeniu i kręcisz dalej bez niej — nawój jest wtedy pusty. Gdy zerwało w trakcie i nawój ma już wagę, użyj licznika zrywów niżej.",
@@ -794,7 +801,13 @@ const T={pl:{
  startAskZero:"Order start: the extruder runs, there is no production yet, the yarn goes to waste.\n\nPrevious order {nr}: {k} kg packed, {n} pcs in stock — the counters go to zero, the new order starts from 0 kg.\n\nContinue?",
  zeroAsk:"You are changing order {nr} to a different one.\n\nOn this machine: {k} kg packed, {n} pcs in stock.\n\nClear them so the new order starts from 0 kg?",
  zeroOk:"Cleared {k} kg from the order counter",
+ konAsk:"End of production — extruder off.\n\nOrder {nr} is closed: {n} pcs ({k} kg) unpacked count as packed, the counters go to zero and the number leaves the machine.\n\nContinue?",
+ konAsk0:"End of production — extruder off.\n\nOrder {nr} is closed and the number leaves the machine.\n\nContinue?",
+ konOk:"Order closed — the machine waits for a new sheet",
+ nrBad:"Order {n} is not from this line — on {g} the number starts with {p}",
+ nrBadAsk:"Wrong order number for {m}.\n\nOn line {g} the order number starts with {p}. Check whether the sheet went to the right machine.",
  jZero:"Previous order closed — {kg} kg, {n} pcs cleared from the counter",
+ jEnd:"Order {a} finished — {kg} kg, {n} pcs counted as packed",
  windPos:"Positions winding",zrywCycle:"Broken this cycle → B",
  launched:"Positions started (exception)",launchedRow:"Positions started",
  launchNote:"All {p} by default. Lower it when a position never started, or broke right after threading and you carry on without it — that package is empty. If it broke mid-cycle and the package already has weight, use the break counter below.",
@@ -1350,6 +1363,7 @@ function loadInputs(){const d=S();
   $("sPos").value=POS(cur)+" szt";$("sPalN").value=PAL(cur)+" szt";
   $("sKg").value=d.cfg.kgNet;$("sProg").value=progA1(cur);$("sShift").value=d.cfg.sh;
   $("oNr").value=d.ord.nr;$("oLot").value=d.ord.lot;$("oIdx").value=d.ord.idx;
+  $("oNr").placeholder=PFX[L_(cur).g]+"2600213";nrMark();
   $("oKg").value=d.ord.kg||"";$("oKgh").value=d.ord.kgh||"";
   $("oDl").value=d.ord.dl||"";$("oSt").value=d.ord.st||"";
   $("oSpd").value=d.spd||"";
@@ -1382,7 +1396,9 @@ function parseScan(v){v=String(v||"").trim();if(!v)return null;
   return{type:"raw",v:v};}
 
 function applyScan(r){const d=S();
-  if(r.type==="ord"){ordNrSwap(d.ord.nr,r.nr);
+  if(r.type==="ord"){
+    if(nrBad(cur,r.nr)){alert(t("nrBadAsk",{g:L_(cur).g,p:PFX[L_(cur).g],m:L_(cur).name}));return;}
+    ordNrSwap(d.ord.nr,r.nr);
     d.ord.nr=r.nr;const p=L_(cur).pair;if(p)db[p].ord.nr=r.nr;
     save();loadInputs();paint();buildDrawer();toast(t("scanOk",{n:r.nr}));return;}
   if(r.type==="pal"){
@@ -1439,13 +1455,30 @@ $("btnCyc").onclick=()=>{const d=S(),now=Date.now();
 $("oSpd").oninput=()=>{S().spd=fnum($("oSpd"),0);
   const p=L_(cur).pair;if(p&&(db[p].ord.nr||"").trim()===(S().ord.nr||"").trim())db[p].spd=S().spd;
   save();paint();};
-[["oNr","nr"],["oLot","lot"],["oIdx","idx"],["oDl","dl"],["oSt","st"]].forEach(([i,k])=>
+[["oLot","lot"],["oIdx","idx"],["oDl","dl"],["oSt","st"]].forEach(([i,k])=>
   $(i).oninput=()=>{S().ord[k]=$(i).value;save();paint();buildDrawer();});
+/* Zlota zasada zakladu: zlecenie na PA zaczyna sie od 86, na PP od 87.
+   Numer z drugiej linii to pomylka przy przepisywaniu z bloczka — lapiemy ja od razu,
+   zanim kilogramy z jednego wyrobu wejda do drugiego. */
+const PFX={PA:"86",PP:"87"};
+function nrBad(id,nr){nr=String(nr||"").trim();
+  return nr.length>=2&&nr.slice(0,2)!==PFX[L_(id).g];}
+function nrMark(){const v=String($("oNr").value||"").trim(),bad=nrBad(cur,v),f=$("nrFlag");
+  f.hidden=!bad;
+  if(bad)f.textContent=t("nrBad",{n:v,g:L_(cur).g,p:PFX[L_(cur).g]});
+  $("oNr").style.borderColor=bad?"var(--bad)":"";
+  return bad;}
 /* Numer zlecenia zmienia sie w polu litera po literze — pytamy dopiero po wyjsciu
    z pola, majac w rece numer sprzed edycji. */
 let ONR_WAS="";
+$("oNr").oninput=function(){if(!nrMark())S().ord.nr=$("oNr").value;
+  save();paint();buildDrawer();};
 $("oNr").onfocus=function(){ONR_WAS=(S().ord.nr||"").trim();};
-$("oNr").onchange=function(){const w=ONR_WAS;ONR_WAS=(S().ord.nr||"").trim();
+$("oNr").onchange=function(){
+  if(nrBad(cur,$("oNr").value)){
+    alert(t("nrBadAsk",{g:L_(cur).g,p:PFX[L_(cur).g],m:L_(cur).name}));
+    $("oNr").value=S().ord.nr;nrMark();return;}
+  const w=ONR_WAS;ONR_WAS=(S().ord.nr||"").trim();
   ordNrSwap(w,ONR_WAS);};
 [["oKg","kg"],["oKgh","kgh"]].forEach(([i,k])=>
   $(i).oninput=()=>{S().ord[k]=fnum($(i),0);const p=L_(cur).pair;
@@ -1453,8 +1486,12 @@ $("oNr").onchange=function(){const w=ONR_WAS;ONR_WAS=(S().ord.nr||"").trim();
     save();paint();buildDrawer();});
 /* Spakowane liczymy w kilogramach, bo paletę i tak się waży — to liczba fizyczna,
    niezależna od tego, czy ktoś miał w tym czasie otwartą aplikację. */
-const ordScope=()=>{const nr=(S().ord.nr||"").trim();
-  return nr?LINES.filter(l=>(db[l.id].ord.nr||"").trim()===nr).map(l=>l.id):[cur];};
+/* Wspolne zlecenie maja tylko dwie nawijarki jednego ekstrudera: N1A i N1B.
+   Ten sam numer wpisany na innej linii to inny wyrob i inna masa nawoju, wiec
+   kilogramow z roznych maszyn nie wolno sumowac w jedno zlecenie. */
+function scopeOf(id){const nr=(db[id].ord.nr||"").trim(),p=L_(id).pair;
+  return (nr&&p&&db[p]&&(db[p].ord.nr||"").trim()===nr)?[id,p]:[id];}
+const ordScope=()=>scopeOf(cur);
 const packKgTotal=()=>ordScope().reduce((a,id)=>a+(db[id].ord.packKg||0),0);
 /* Nowe zlecenie musi zaczynac sie od zera. Spakowane kilogramy i nawoje w magazynie
    naleza do starego numeru — zostawione, wchodza w postep nowego zlecenia i naglowek
@@ -1661,7 +1698,20 @@ function setState(ns){const d=S(),n=Date.now();flushZryw(cur);
   save();paint();buildDrawer();}
 $("btnAwaria").onclick=()=>setState("awaria");
 $("btnStop").onclick=()=>setState("stop");
-$("btnKoniec").onclick=()=>setState("koniec");
+/* Koniec produkcji = zlecenie zrobione. Wszystko, co lezy niespakowane, liczy sie
+   jako spakowane do tego zlecenia, liczniki ida na zero, a numer znika z maszyny —
+   ekstruder stoi i czeka na nowy bloczek. */
+function closeOrd(id,ask){const d=db[id],c=ordSum(id),nr=(d.ord.nr||"").trim();
+  if(!nr&&c.kg<=0.01&&!c.n)return true;
+  const have=(c.kg>0.01||c.n>0);
+  if(ask&&!confirm(have?t("konAsk",{nr:nr||"\u2013",k:n0(c.kg),n:c.n})
+                       :t("konAsk0",{nr:nr||"\u2013"})))return false;
+  jrn(id,"ordEnd",{kg:n0(c.kg),n:c.n,a:nr||"\u2013"});
+  ordZero(id);
+  d.ord.nr="";d.ord.lot="";d.ord.idx="";d.ord.kg=0;d.ord.st="";d.ord.dl="";d.ord.kolor=false;
+  return true;}
+$("btnKoniec").onclick=()=>{if(!closeOrd(cur,true))return;
+  loadInputs();setState("koniec");toast(t("konOk"));};
 /* Zlecenie „do wyczerpania koloru": ilosc z bloczka przestaje byc granica.
    Maszyna kreci normalnie, dopoki nie skonczy sie barwnik — konca nie da sie wyliczyc z kg. */
 $("btnKolor").onclick=()=>{const d=S(),v=!d.ord.kolor;
@@ -1978,9 +2028,7 @@ function paint(){
       "</span><span>"+hm(dur)+"</span>";eb.appendChild(row);});
 
   /* naglowek zlecenia: status i prognoza konca w dniach */
-  (function(){const o2=d.ord,sc2=(o2.nr||"").trim()
-      ?LINES.filter(function(l){return (db[l.id].ord.nr||"").trim()===(o2.nr||"").trim();}).map(function(l){return l.id;})
-      :[cur];
+  (function(){const o2=d.ord,sc2=scopeOf(cur);
     let made=0,teor=0,st=0;
     sc2.forEach(function(id){const x=db[id];
       made+=(x.ord.packKg||0)+gKG(x.stock);
@@ -2044,8 +2092,7 @@ function paint(){
   $("vShBwhy").textContent=d.shB.zryw+" / "+d.shB.wlok;
   $("vUtyl").textContent=d.utyl.n?d.utyl.n+" szt · "+n1(d.utyl.kg)+" kg":"–";
 
-  const nr=(o.nr||"").trim();
-  const sc=nr?LINES.filter(l=>(db[l.id].ord.nr||"").trim()===nr).map(l=>l.id):[cur];
+  const sc=scopeOf(cur);
   $("joint").hidden=sc.length<2;
   if(sc.length>1)$("joint").textContent=t("joint",{l:sc.map(i=>L_(i).name).join(" + ")});
   const pkT=packKgTotal();
@@ -2087,7 +2134,7 @@ function paint(){
 }
 
 /* ---------- dziennik: render ---------- */
-const JL={ordZero:"jZero",koniec:"stKoniec",rozruch:"stRozruch",prod0:"jProd0",already:"jAlready",lostLoad:"jLost",obcOff:"jObcOff",kolorOn:"jKolorOn",kolorOff:"jKolorOff",cyc:"jCyc",baran:"jBaran",baranOff:"jBaranOff",obc:"jObc",noobc:"jNoObc",zryw:"jZryw",zrywOff:"jZrywOff",wlok:"jWlok",wlokOff:"jWlokOff",
+const JL={ordZero:"jZero",ordEnd:"jEnd",koniec:"stKoniec",rozruch:"stRozruch",prod0:"jProd0",already:"jAlready",lostLoad:"jLost",obcOff:"jObcOff",kolorOn:"jKolorOn",kolorOff:"jKolorOff",cyc:"jCyc",baran:"jBaran",baranOff:"jBaranOff",obc:"jObc",noobc:"jNoObc",zryw:"jZryw",zrywOff:"jZrywOff",wlok:"jWlok",wlokOff:"jWlokOff",
   run:"jRun",start:"jStart",first:"jFirst",launch:"jLaunch",
   odpad:"stOdpad",awaria:"stAwaria",stop:"stopped",proba:"stProba"};
 function paintJrn(){const d=S(),box=$("jrnBox");box.innerHTML="";
