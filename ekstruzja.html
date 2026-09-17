@@ -129,6 +129,16 @@
   table.rap td.l{text-align:left;white-space:normal;min-width:130px;font-size:.72rem}
   table.rap tr.sum td{font-weight:700;background:#F8FAFB}
   table.rap td.h{font-weight:700;background:#FBFCFD}
+  table.rap input{width:100%;min-width:52px;border:0;background:transparent;padding:3px 2px;
+    font:inherit;text-align:center;border-radius:4px}
+  table.rap td.l input{text-align:left;min-width:120px}
+  table.rap input:focus{background:#fff;outline:2px solid var(--blue);outline-offset:-2px}
+  table.rap input.ed{background:#FFF9E8}
+  table.rap td.obc{white-space:normal;min-width:96px}
+  .obcChip{display:inline-flex;align-items:center;gap:3px;margin:1px;padding:1px 4px;
+    border:1px solid var(--edge);border-radius:10px;font-size:.72rem;background:#fff}
+  .obcChip b{font-weight:700}
+  .obcChip button{color:var(--bad);font-weight:700;font-size:.85rem;line-height:1;padding:0 2px}
   .four .gcol input{padding:10px 2px;font-size:.95rem}
   .tag.c{background:#F1EDF6;border-color:#CFC2E0;color:#5B4780}
   .gcol{text-align:center}
@@ -236,6 +246,7 @@
         <div id="t_zycieT" style="font-size:.8rem;font-weight:700;color:var(--ink);margin:4px 0 8px"></div>
         <button class="btn ghost" id="btnStart" style="margin-top:0"></button>
         <button class="btn ghost" id="btnAlready" style="margin-top:8px"></button>
+        <button class="btn ghost" id="btnKolor" style="margin-top:8px"></button>
         <button class="btn ghost" id="btnKoniec" style="margin-top:8px"></button>
         <div class="hint" id="zycieNote" style="margin:8px 0 14px"></div>
 
@@ -568,7 +579,7 @@ function migG(o,kgNet){const r=mkG();if(!o)return r;
 const gN=o=>G.reduce((a,g)=>a+o[g].n,0);
 const gKG=o=>G.reduce((a,g)=>a+o[g].kg,0);
 const DEF=()=>({cfg:{kgNet:3,progA1:3,sh:6,cycMin:0,tAdj:0},
-  ord:{nr:"",lot:"",idx:"",kg:0,kgh:0,pairKgh:1,st:"",dl:"",pack:0,packKg:0,packLog:[],palIds:[]},
+  ord:{nr:"",lot:"",idx:"",kg:0,kgh:0,pairKgh:1,st:"",dl:"",kolor:false,pack:0,packKg:0,packLog:[],palIds:[]},
   stock:mkG(),shift:mkG(),shB:{zryw:0,wlok:0},
   zryw:0,zrywCycle:0,zrywKg:0,zrywShift:0,zrywPosMs:0,zrywSince:Date.now(),zrywPkg:[],
   zrywPos:[],zrywCycPos:[],wlokPos:[],baranPos:[],zrywKgPos:{},journal:[],autoDoff:true,
@@ -589,8 +600,13 @@ const T={pl:{
  btnKoniec:"Koniec produkcji — ekstruder off",konShift:"Brak zlecenia na zmianie",
  konFlag:"Zlecenie skończone — maszyna czeka na nowe. Nowe uruchom przyciskiem „Start produkcji”.",
  btnAwaria:"Awaria",btnStop:"Stop",
- btnStart:"Start zlecenia — ekstruder rusza", btnAlready:"Już produkcja", zycieT:"Życie zlecenia",
- zycieNote:"Rzadkie przyciski, raz na zlecenie. Start zlecenia: ekstruder rusza, produkcji jeszcze nie ma. Już produkcja: wracam z wolnego do trwającej produkcji. Koniec produkcji: zlecenie skończone, ekstruder wyłączony.", roleT:"Gdzie jestem na zmianie",roleG:"Na górze",roleD:"Na dole",roleO:"Wolne",
+ btnStart:"Start zlecenia — ekstruder rusza", btnAlready:"Już produkcja", btnKolor:"Do wyczerpania koloru",
+ kolorOk:"Zlecenie idzie do wyczerpania koloru",kolorOff2:"Zlecenie znowu na ilość z bloczka",
+ ohKolor:"Do wyczerpania koloru",ohKolorEnd:"gdy skończy się barwnik",
+ ohKolorNote:"Ilość z bloczka to nie koniec — do niej zostało {k} kg, potem produkcja idzie dalej normalnie.",
+ ohKolorOver:"Ponad ilość z bloczka: {k} kg. Kręci do wyczerpania barwnika.",
+ jKolorOn:"Zlecenie do wyczerpania koloru",jKolorOff:"Zlecenie znowu na ilość z bloczka", zycieT:"Życie zlecenia",
+ zycieNote:"Rzadkie przyciski, raz na zlecenie. Start zlecenia: ekstruder rusza, produkcji jeszcze nie ma. Już produkcja: wracam z wolnego do trwającej produkcji. Do wyczerpania koloru: ilość z bloczka przestaje być granicą, maszyna kręci dalej normalnie, aż skończy się barwnik. Koniec produkcji: zlecenie skończone, ekstruder wyłączony.", roleT:"Gdzie jestem na zmianie",roleG:"Na górze",roleD:"Na dole",roleO:"Wolne",
  roleNoteD:"Na dole: nawijanie, podmiany i gatunki.",
  roleNoteG:"Na górze: ekstruder i przewlekanie. Podmiany liczą się dalej.",
  roleNoteOff:"Wolne: obciągi liczą się dalej, ale nie wchodzą do raportu — nikt nie zapisał sztuk ani gatunków.",
@@ -598,9 +614,13 @@ const T={pl:{
  alreadyAsk:"Produkcja już szła. Który obciąg schodzi teraz?",
  alreadyBad:"Podaj numer obciągu",alreadyOk:"Produkcja od obciągu {n}",
  jProd0:"Poszła produkcja — obciąg 0",jAlready:"Wejście w trwającą produkcję, obciąg {n}",
- jLost:"Zaczęty obciąg przepadł — {k} kg w odpad",btnResume:"Start",
+ jLost:"Zaczęty obciąg przepadł — {kg} kg w odpad",btnResume:"Start",
  startAsk:"Start zlecenia: ekstruder rusza, produkcji jeszcze nie ma, nitka leci w odpad. Kontynuować?",
  startOk:"Nowe zlecenie — obciąg 0",
+ startAskZero:"Start zlecenia: ekstruder rusza, produkcji jeszcze nie ma, nitka leci w odpad.\n\nPoprzednie zlecenie {nr}: {k} kg spakowane, {n} szt w magazynie — liczniki idą na zero, nowe zlecenie zaczyna się od 0 kg.\n\nKontynuować?",
+ zeroAsk:"Zmieniasz zlecenie {nr} na inne.\n\nNa liczniku tej maszyny zostało: {k} kg spakowane, {n} szt w magazynie.\n\nZdjąć je z licznika, żeby nowe zlecenie zaczęło się od 0 kg?",
+ zeroOk:"Zdjęto {k} kg z licznika zlecenia",
+ jZero:"Zamknięte poprzednie zlecenie — {kg} kg, {n} szt zdjęte z licznika",
  windPos:"Pozycje nawijające",zrywCycle:"Zerwane w tym cyklu → B",
  launched:"Puszczone pozycje (wyjątek)",launchedRow:"Puszczone pozycje",
  launchNote:"Domyślnie wszystkie {p}. Zmniejsz, gdy pozycja w ogóle nie ruszyła albo zerwało ją zaraz po przewleczeniu i kręcisz dalej bez niej — nawój jest wtedy pusty. Gdy zerwało w trakcie i nawój ma już wagę, użyj licznika zrywów niżej.",
@@ -722,7 +742,10 @@ const T={pl:{
  rTeorH:"Wydajność teoretyczna/h",rTeorZm:"Wydajność teoretyczna/zmianę",
  rGodz:"Godzina",rSuma:"Suma",rObc:"Nr obciągu",rUwagi:"Uwagi",
  rPstart:"Postój start",rPstop:"Postój stop",rPowod:"Powód postoju",
- rapCsv:"Eksport raportu CSV",histT:"Raporty zmian",histMonth:"Miesiąc",histList:"Zmiany",
+ rapCsv:"Eksport raportu CSV", rapUwagi:"Uwagi do zmiany",rapDel:"Usuń podmianę",
+ rapEditHint:"Każde pole można poprawić — żółte jest wpisane ręcznie, puste wraca do wartości wyliczonej. Krzyżyk przy numerze usuwa podmianę razem z jej kilogramami.",
+ rapDelAsk:"Usunąć podmianę nr {n} z godziny {t}? Zniknie z raportu i z magazynu.",
+ rapDelOk:"Podmiana usunięta",rapDelNo:"Nie znaleziono tej podmiany",histT:"Raporty zmian",histMonth:"Miesiąc",histList:"Zmiany",
  histNote:"Każda zmiana zapisuje się sama przy zmianie warty. Archiwum trzyma 13 miesięcy.",
  histEmpty:"Brak zapisanych zmian w tym miesiącu",
  csv:"Eksport CSV — ten miesiąc",csvAll:"Eksport CSV — całe archiwum",
@@ -751,8 +774,13 @@ const T={pl:{
  btnKoniec:"Production finished — extruder off",konShift:"No order this shift",
  konFlag:"The order is finished and the machine is waiting. Start the next one with \u201eStart production\u201d.",
  btnAwaria:"Breakdown",btnStop:"Stop",
- btnStart:"Order start — extruder on", btnAlready:"Already producing", zycieT:"Order lifecycle",
- zycieNote:"Rare buttons, once per order. Order start: the extruder runs, there is no production yet. Already producing: joining production after days off. Production finished: the order is done, the extruder is off.", roleT:"Where I am on the shift",roleG:"Upstairs",roleD:"Downstairs",roleO:"Day off",
+ btnStart:"Order start — extruder on", btnAlready:"Already producing", btnKolor:"Until the colour runs out",
+ kolorOk:"Order runs until the colour is used up",kolorOff2:"Order back to the sheet quantity",
+ ohKolor:"Until the colour runs out",ohKolorEnd:"when the masterbatch ends",
+ ohKolorNote:"The sheet quantity is not the end — {k} kg left to it, then production simply continues.",
+ ohKolorOver:"Beyond the sheet quantity: {k} kg. Running until the masterbatch is used up.",
+ jKolorOn:"Order set to run until the colour ends",jKolorOff:"Order back to the sheet quantity", zycieT:"Order lifecycle",
+ zycieNote:"Rare buttons, once per order. Order start: the extruder runs, there is no production yet. Already producing: joining production after days off. Until the colour runs out: the sheet quantity stops being the limit and the machine simply keeps running until the masterbatch ends. Production finished: the order is done, the extruder is off.", roleT:"Where I am on the shift",roleG:"Upstairs",roleD:"Downstairs",roleO:"Day off",
  roleNoteD:"Downstairs: winding, doffings and grades.",
  roleNoteG:"Upstairs: extruder and re-threading. Doffings keep counting.",
  roleNoteOff:"Day off: loads keep counting but do not enter the report — nobody recorded pieces or grades.",
@@ -760,9 +788,13 @@ const T={pl:{
  alreadyAsk:"Production was already running. Which load is coming off now?",
  alreadyBad:"Enter the load number",alreadyOk:"Production from load {n}",
  jProd0:"Production started — load 0",jAlready:"Joined ongoing production, load {n}",
- jLost:"Started load lost — {k} kg to waste",btnResume:"Start",
+ jLost:"Started load lost — {kg} kg to waste",btnResume:"Start",
  startAsk:"Order start: the extruder runs, there is no production yet, the yarn goes to waste. Continue?",
  startOk:"New order — load 0",
+ startAskZero:"Order start: the extruder runs, there is no production yet, the yarn goes to waste.\n\nPrevious order {nr}: {k} kg packed, {n} pcs in stock — the counters go to zero, the new order starts from 0 kg.\n\nContinue?",
+ zeroAsk:"You are changing order {nr} to a different one.\n\nOn this machine: {k} kg packed, {n} pcs in stock.\n\nClear them so the new order starts from 0 kg?",
+ zeroOk:"Cleared {k} kg from the order counter",
+ jZero:"Previous order closed — {kg} kg, {n} pcs cleared from the counter",
  windPos:"Positions winding",zrywCycle:"Broken this cycle → B",
  launched:"Positions started (exception)",launchedRow:"Positions started",
  launchNote:"All {p} by default. Lower it when a position never started, or broke right after threading and you carry on without it — that package is empty. If it broke mid-cycle and the package already has weight, use the break counter below.",
@@ -884,7 +916,10 @@ const T={pl:{
  rTeorH:"Theoretical output/h",rTeorZm:"Theoretical output/shift",
  rGodz:"Hour",rSuma:"Total",rObc:"Load no.",rUwagi:"Notes",
  rPstart:"Stop start",rPstop:"Stop end",rPowod:"Reason",
- rapCsv:"Export report CSV",histT:"Shift reports",histMonth:"Month",histList:"Shifts",
+ rapCsv:"Export report CSV", rapUwagi:"Shift notes",rapDel:"Delete the doffing",
+ rapEditHint:"Every field can be corrected — yellow is typed in, empty falls back to the calculated value. The cross next to a number deletes that doffing along with its kilograms.",
+ rapDelAsk:"Delete doffing no. {n} from {t}? It disappears from the report and from stock.",
+ rapDelOk:"Doffing deleted",rapDelNo:"That doffing was not found",histT:"Shift reports",histMonth:"Month",histList:"Shifts",
  histNote:"Every shift is filed automatically at handover. The archive keeps 13 months.",
  histEmpty:"No shifts recorded this month",
  csv:"Export CSV — this month",csvAll:"Export CSV — whole archive",
@@ -984,6 +1019,10 @@ const HIST={
     rec.k=rec.t+"_"+rec.m;rec.ym=ymOf(rec.t);
     if(IDB.ok)return IDB.put(rec).then(function(){HCOUNT++;}).catch(function(){lsPush(rec);});
     lsPush(rec);return Promise.resolve();},
+  save:function(rec){            /* nadpisanie istniejacej zmiany po recznej poprawce */
+    rec.k=rec.k||(rec.t+"_"+rec.m);rec.ym=rec.ym||ymOf(rec.t);
+    if(IDB.ok)return IDB.put(rec).catch(function(){lsPush(rec);});
+    lsPush(rec);return Promise.resolve();},
   byMonth:function(ym){
     if(IDB.ok)return IDB.byMonth(ym).catch(function(){return lsLoad(ym);});
     return Promise.resolve(lsLoad(ym));},
@@ -1062,7 +1101,7 @@ function rollShift(){const now=Date.now();
       d.shKey=key;d.dwShift=0;d.odpShift=0;d.konShift=0;d.zrywShift=0;d.wlokShift=0;d.shiftDoffs=0;d.firstDoff=0;
       d.labSet=null;d.shift=mkG();d.shB={zryw:0,wlok:0};d.events=[];d.utyl={n:0,kg:0};
       d.zrywPosMs=0;d.zrywSince=now;d.journal=[];
-      d.zrywPos=[];d.zrywCycPos=[];d.wlokPos=[];d.baranPos=[];d.zrywKgPos={};}});
+      d.zrywPos=[];d.zrywCycPos=[];d.wlokPos=[];d.baranPos=[];d.zrywKgPos={};d.rapOvr={};}});
   if(Math.random()<0.02)HIST.prune();}
 /* obciąg trafia do laboratorium rano po nocce, a lab nie pracuje w sobotę i niedzielę,
    więc oddajemy w noce zaczynające się w niedzielę, poniedziałek, wtorek, środę i czwartek */
@@ -1279,7 +1318,7 @@ function applyLang(){document.documentElement.lang=lang;
   for(const i in LBL){const e=$(i);if(e)e.textContent=t(LBL[i]);}
   $("btnDoff").textContent=t("doffBtn");$("btnReset").textContent=t("reset");
   $("dpSave").textContent=t("dpSave");$("dpCancel").textContent=t("dpCancel");
-  ["btnAwaria","btnStop","btnKoniec","btnStart","btnResume","btnAlready"]
+  ["btnAwaria","btnStop","btnKoniec","btnStart","btnResume","btnAlready","btnKolor"]
     .forEach(b=>$(b).textContent=t(b));
   $("t_zycieT").textContent=t("zycieT");$("zycieNote").textContent=t("zycieNote");
   $("odpNote").textContent=t("odpNote");$("notifNote").textContent=t("notifNote");
@@ -1343,7 +1382,8 @@ function parseScan(v){v=String(v||"").trim();if(!v)return null;
   return{type:"raw",v:v};}
 
 function applyScan(r){const d=S();
-  if(r.type==="ord"){d.ord.nr=r.nr;const p=L_(cur).pair;if(p)db[p].ord.nr=r.nr;
+  if(r.type==="ord"){ordNrSwap(d.ord.nr,r.nr);
+    d.ord.nr=r.nr;const p=L_(cur).pair;if(p)db[p].ord.nr=r.nr;
     save();loadInputs();paint();buildDrawer();toast(t("scanOk",{n:r.nr}));return;}
   if(r.type==="pal"){
     d.ord.palIds=d.ord.palIds||[];
@@ -1401,6 +1441,12 @@ $("oSpd").oninput=()=>{S().spd=fnum($("oSpd"),0);
   save();paint();};
 [["oNr","nr"],["oLot","lot"],["oIdx","idx"],["oDl","dl"],["oSt","st"]].forEach(([i,k])=>
   $(i).oninput=()=>{S().ord[k]=$(i).value;save();paint();buildDrawer();});
+/* Numer zlecenia zmienia sie w polu litera po literze — pytamy dopiero po wyjsciu
+   z pola, majac w rece numer sprzed edycji. */
+let ONR_WAS="";
+$("oNr").onfocus=function(){ONR_WAS=(S().ord.nr||"").trim();};
+$("oNr").onchange=function(){const w=ONR_WAS;ONR_WAS=(S().ord.nr||"").trim();
+  ordNrSwap(w,ONR_WAS);};
 [["oKg","kg"],["oKgh","kgh"]].forEach(([i,k])=>
   $(i).oninput=()=>{S().ord[k]=fnum($(i),0);const p=L_(cur).pair;
     if(p&&(db[p].ord.nr||"").trim()===(S().ord.nr||"").trim())db[p].ord[k]=S().ord[k];
@@ -1410,6 +1456,23 @@ $("oSpd").oninput=()=>{S().spd=fnum($("oSpd"),0);
 const ordScope=()=>{const nr=(S().ord.nr||"").trim();
   return nr?LINES.filter(l=>(db[l.id].ord.nr||"").trim()===nr).map(l=>l.id):[cur];};
 const packKgTotal=()=>ordScope().reduce((a,id)=>a+(db[id].ord.packKg||0),0);
+/* Nowe zlecenie musi zaczynac sie od zera. Spakowane kilogramy i nawoje w magazynie
+   naleza do starego numeru — zostawione, wchodza w postep nowego zlecenia i naglowek
+   od razu pokazuje "zakonczone". Liczymy je i zdejmujemy tylko z tej maszyny,
+   zeby nie ruszyc maszyn, ktore stary numer kreca dalej. */
+function ordSum(id){const x=db[id];
+  return{kg:+(((x.ord.packKg||0)+gKG(x.stock))).toFixed(2),n:gN(x.stock)};}
+function ordZero(id){const x=db[id];
+  x.ord.packKg=0;x.ord.pack=0;x.ord.packLog=[];x.ord.palIds=[];
+  x.stock=mkG();}
+function ordNrSwap(oldNr,newNr){
+  oldNr=(oldNr||"").trim();newNr=(newNr||"").trim();
+  if(!oldNr||!newNr||oldNr===newNr)return;
+  const c=ordSum(cur);
+  if(c.kg<=0.01&&!c.n)return;
+  if(!confirm(t("zeroAsk",{nr:oldNr,k:n0(c.kg),n:c.n})))return;
+  ordZero(cur);jrn(cur,"ordZero",{kg:n0(c.kg),n:c.n});
+  save();loadInputs();paint();buildDrawer();toast(t("zeroOk",{k:n0(c.kg)}));}
 function packPush(kg,set,ded){const o=S().ord;
   o.packLog.push({t:Date.now(),kg,set,ded:ded||null,
     prev:set?ordScope().map(id=>[id,db[id].ord.packKg||0]):null});
@@ -1599,13 +1662,25 @@ function setState(ns){const d=S(),n=Date.now();flushZryw(cur);
 $("btnAwaria").onclick=()=>setState("awaria");
 $("btnStop").onclick=()=>setState("stop");
 $("btnKoniec").onclick=()=>setState("koniec");
+/* Zlecenie „do wyczerpania koloru": ilosc z bloczka przestaje byc granica.
+   Maszyna kreci normalnie, dopoki nie skonczy sie barwnik — konca nie da sie wyliczyc z kg. */
+$("btnKolor").onclick=()=>{const d=S(),v=!d.ord.kolor;
+  d.ord.kolor=v;
+  const p=L_(cur).pair;
+  if(p&&(db[p].ord.nr||"").trim()===(d.ord.nr||"").trim())db[p].ord.kolor=v;
+  jrn(cur,v?"kolorOn":"kolorOff");
+  save();render();toast(t(v?"kolorOk":"kolorOff2"));};
 /* Start produkcji = nowe zlecenie / nowy typ nitki. Obciąg wraca na 0, cykl liczy się od nowa. */
-$("btnStart").onclick=()=>{if(!confirm(t("startAsk")))return;
-  const d=S();flushZryw(cur);
+$("btnStart").onclick=()=>{const d=S(),c=ordSum(cur),carry=(c.kg>0.01||c.n>0);
+  if(!confirm(carry?t("startAskZero",{nr:(d.ord.nr||"–"),k:n0(c.kg),n:c.n}):t("startAsk")))return;
+  if(carry){ordZero(cur);jrn(cur,"ordZero",{kg:n0(c.kg),n:c.n});}
+  flushZryw(cur);
   d.obciag=0;d.doffStart=Date.now();d.dwDoff=0;d.preProd=true;
   d.zryw=0;d.zrywCycle=0;d.zrywKg=0;d.zrywPkg=[];d.wlok=0;d.launched=POS(cur);
-  d.zrywPos=[];d.zrywCycPos=[];d.wlokPos=[];d.zrywKgPos={};syncZ(cur);
+  d.zrywPos=[];d.zrywCycPos=[];d.wlokPos=[];d.baranPos=[];d.zrywKgPos={};syncZ(cur);
   d.notifDoff=0;d.notifPal=0;
+  /* nowe zlecenie nie dziedziczy "do wyczerpania koloru" po poprzednim */
+  d.ord.kolor=false;
   d.ord.st=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16);
   jrn(cur,"start");setState("rozruch");toast(t("startOk"));};
 
@@ -1638,7 +1713,7 @@ $("btnResume").onclick=()=>{const d=S(),from=d.state,now=Date.now();
     if(all>0.01){
       if(one<PROG_ODPAD&&confirm(t("scrapAsk",{w:n1(one),k:n1(all)}))){
         d.utyl.kg=+(d.utyl.kg+all).toFixed(2);
-        jrn(cur,"lostLoad",{k:n1(all)});nowy();}
+        jrn(cur,"lostLoad",{kg:n1(all)});nowy();}
       else registerDoff(cur,now,"man");   /* liczy wage i gatunek, sam podnosi numer */
     }else nowy();
   }
@@ -1823,6 +1898,7 @@ function paint(){
   $("btnStop").hidden=stopped;$("btnAwaria").hidden=stopped;
   [["btnAwaria","awaria"],["btnStop","stop"],["btnKoniec","koniec"],["btnStart","rozruch"]]
     .forEach(([b,st])=>$(b).classList.toggle("back",d.state===st));
+  $("btnKolor").classList.toggle("back",!!d.ord.kolor);
   $("vNwDoff").textContent=LAUNCH(cur)+" szt";
   $("vKgNw").textContent=n1(c.kgNet)+" kg";
   const scrap=(d.obciag===0)||(d.state==="proba");
@@ -1913,11 +1989,14 @@ function paint(){
       if(p&&(!st||p<st))st=p;});
     const tot=o2.kg||0,left=Math.max(0,tot-made);
     const done=left<=0&&tot>0;
-    $("ordHeadTop").textContent=(o2.nr||t("ohNone"))+(tot?" · "+(done?t("ohDone2"):t("ohRun")):"");
+    const kolor=!!o2.kolor;
+    $("ordHeadTop").textContent=(o2.nr||t("ohNone"))+
+      (tot?" · "+(kolor?t("ohKolor"):(done?t("ohDone2"):t("ohRun"))):"");
     $("ordHeadIdx").textContent=o2.idx||"";
     $("pOrdTop").style.width=tot?Math.min(100,made/tot*100).toFixed(1)+"%":"0%";
+    $("pOrdTop").style.background=(o2.kolor&&made>=tot)?"var(--ok)":"";
     $("vOhDone").textContent=tot?n0(made)+" / "+n0(tot)+" kg":"–";
-    $("vOhLeft").textContent=tot?n0(left)+" kg":"–";
+    $("vOhLeft").textContent=tot?(kolor&&made>tot?"+"+n0(made-tot)+" kg":n0(left)+" kg"):"–";
     const fl=$("ohFlag");
     /* Tempo rzeczywiste liczymy ze spakowanych i lezacych kilogramow podzielonych przez
        czas od startu produkcji. Siedza w nim wszystkie postoje, zrywy i odpad, wiec
@@ -1927,6 +2006,12 @@ function paint(){
     $("vOhRate").textContent=real
       ?n1(real)+" kg/h"+(teor?" · "+Math.round(real/teor*100)+"%":"")
       :(teor?t("ohTeor",{k:n1(teor)}):"–");
+    if(kolor){
+      /* konca nie liczymy z kilogramow — decyduje zapas barwnika */
+      $("vOhEnd").textContent=t("ohKolorEnd");
+      fl.className="flag warn";
+      fl.textContent=made>=tot?t("ohKolorOver",{k:n0(made-tot)}):t("ohKolorNote",{k:n0(left)});
+      return;}
     if(done){$("vOhEnd").textContent=t("ohDone2");fl.className="flag ok";fl.textContent=t("ohDone2");return;}
     if(!tot||!st){$("vOhEnd").textContent="–";fl.className="flag n";
       fl.textContent=st?t("ohNoData"):t("ohNoStart");return;}
@@ -2002,7 +2087,7 @@ function paint(){
 }
 
 /* ---------- dziennik: render ---------- */
-const JL={koniec:"stKoniec",rozruch:"stRozruch",prod0:"jProd0",already:"jAlready",lostLoad:"jLost",obcOff:"jObcOff",cyc:"jCyc",baran:"jBaran",baranOff:"jBaranOff",obc:"jObc",noobc:"jNoObc",zryw:"jZryw",zrywOff:"jZrywOff",wlok:"jWlok",wlokOff:"jWlokOff",
+const JL={ordZero:"jZero",koniec:"stKoniec",rozruch:"stRozruch",prod0:"jProd0",already:"jAlready",lostLoad:"jLost",obcOff:"jObcOff",kolorOn:"jKolorOn",kolorOff:"jKolorOff",cyc:"jCyc",baran:"jBaran",baranOff:"jBaranOff",obc:"jObc",noobc:"jNoObc",zryw:"jZryw",zrywOff:"jZrywOff",wlok:"jWlok",wlokOff:"jWlokOff",
   run:"jRun",start:"jStart",first:"jFirst",launch:"jLaunch",
   odpad:"stOdpad",awaria:"stAwaria",stop:"stopped",proba:"stProba"};
 function paintJrn(){const d=S(),box=$("jrnBox");box.innerHTML="";
@@ -2010,7 +2095,7 @@ function paintJrn(){const d=S(),box=$("jrnBox");box.innerHTML="";
   if(!J.length){box.innerHTML='<div style="color:var(--dim)">'+t("jrnEmpty")+"</div>";return;}
   J.forEach(function(e){
     const r=document.createElement("div");r.className="log";
-    let txt=t(JL[e.k]||e.k,{n:e.n,p:e.p,a:e.a||"",h:e.h||""});
+    let txt=t(JL[e.k]||e.k,{n:e.n,p:e.p,a:e.a||"",h:e.h||"",kg:e.kg||""});
     /* stan trwa dalej, dopóki maszyna nie ruszy — wtedy pokazujemy licznik na żywo */
     let dur="";
     if(STATEK.indexOf(e.k)>=0)dur=e.d!=null?hm(e.d):hm(Date.now()-e.t)+" …";
@@ -2061,6 +2146,41 @@ $("jeDel").onclick=function(){const d=S(),e=d.journal[JEI];if(!e)return;
   $("jeCard").hidden=true;JEI=-1;save();render();toast(t("jeDelOk"));};
 
 /* ---------- paint: stock ---------- */
+/* ---------- magazyn ----------
+   Karty budujemy raz. Wczesniej caly ekran przerysowywal sie co sekunde razem z polami,
+   wiec pole, w ktore ktos wpisywal sztuki, gubilo kursor i klawiatura na telefonie
+   sama sie zamykala. Teraz co sekunde podmieniamy tylko teksty. */
+let SBX=null;
+function buildStock(){const sb=$("stockBox");sb.innerHTML="";SBX={};
+  LINES.forEach(function(l){const card=document.createElement("div");card.className="mcard";
+    const head=document.createElement("div");head.className="mhead";
+    const nm=document.createElement("b");nm.textContent=l.name;
+    const em=document.createElement("em");
+    head.appendChild(nm);head.appendChild(em);card.appendChild(head);
+    const grid=document.createElement("div");grid.className="three";
+    const cells={};
+    G.forEach(function(g){const col=document.createElement("div");col.className="gcol";
+      col.innerHTML='<div class="tag '+g+'">'+GN[g]+"</div>";
+      const inp=document.createElement("input");
+      inp.type="number";inp.inputMode="numeric";inp.min="0";
+      const sh=document.createElement("div");sh.className="side";sh.style.marginTop="4px";
+      /* liczbe sztuk zwykle wpisuje sie od nowa, wiec po dotknieciu zaznaczamy calosc */
+      inp.onfocus=function(){setTimeout(function(){try{inp.select();}catch(e){}},0);};
+      inp.oninput=function(){const d=db[l.id],old=d.stock[g],avg=old.n>0?old.kg/old.n:d.cfg.kgNet;
+        const nn=Math.max(0,parseInt(inp.value,10)||0);
+        d.stock[g]={n:nn,kg:+(nn*avg).toFixed(2)};save();updStock();paintPal();};
+      col.appendChild(inp);col.appendChild(sh);grid.appendChild(col);
+      cells[g]={inp:inp,sh:sh};});
+    card.appendChild(grid);sb.appendChild(card);
+    SBX[l.id]={em:em,cells:cells};});}
+function updStock(){if(!SBX||!$("stockBox").firstChild)buildStock();
+  LINES.forEach(function(l){const d=db[l.id],r=SBX[l.id];if(!r)return;
+    r.em.textContent=n1(d.cfg.kgNet)+" kg/szt · "+t("palN")+" "+PAL(l.id)+
+      " · "+t("total")+" "+gN(d.stock);
+    G.forEach(function(g){const c=r.cells[g];
+      /* pola, w ktore ktos wlasnie wpisuje, zostawiamy w spokoju */
+      if(document.activeElement!==c.inp)c.inp.value=d.stock[g].n||0;
+      c.sh.textContent=d.shift[g].n?"+"+d.shift[g].n+" "+t("shiftCol"):"";});});}
 function paintStock(){
   rollShift();
   const on=labOn(cur);
@@ -2070,33 +2190,14 @@ function paintStock(){
   $("labText").textContent=on?t("labYes"):t("labNo");
   $("btnLab").textContent=on?t("labOffB"):t("labOnB");
   $("btnLab").classList.toggle("back",!on);
-  $("labGrade").value=LABG;
+  if(document.activeElement!==$("labGrade"))$("labGrade").value=LABG;
   const lr=$("labRows");lr.innerHTML="";
   if(on){LINES.forEach(l=>{const d=db[l.id],v=POS(l.id),e=document.createElement("div");e.className="log";
       e.innerHTML="<span>"+l.name+"</span><span>−"+v+" → "+Math.max(0,d.stock[LABG].n-v)+" szt</span>";lr.appendChild(e);});
     if(db[cur].labSet===null){const h=document.createElement("div");h.className="hint";h.style.margin="10px 0 0";
       h.textContent=t("labAuto");lr.appendChild(h);}}
 
-  const sb=$("stockBox");sb.innerHTML="";
-  LINES.forEach(l=>{const d=db[l.id],card=document.createElement("div");card.className="mcard";
-    const head=document.createElement("div");head.className="mhead";
-    head.innerHTML="<b>"+l.name+"</b><em>"+n1(d.cfg.kgNet)+" kg/szt · "+
-      t("palN")+" "+PAL(l.id)+" · "+t("total")+" "+gN(d.stock)+"</em>";
-    card.appendChild(head);
-    const grid=document.createElement("div");grid.className="three";
-    G.forEach(g=>{const col=document.createElement("div");col.className="gcol";
-      col.innerHTML='<div class="tag '+g+'">'+GN[g]+"</div>";
-      const inp=document.createElement("input");inp.type="number";inp.inputMode="numeric";inp.min="0";
-      inp.value=d.stock[g].n||0;
-      const sh=document.createElement("div");sh.className="side";sh.style.marginTop="4px";
-      sh.textContent=d.shift[g].n?"+"+d.shift[g].n+" "+t("shiftCol"):"";
-      inp.oninput=()=>{const old=d.stock[g],avg=old.n>0?old.kg/old.n:d.cfg.kgNet;
-        const nn=Math.max(0,parseInt(inp.value,10)||0);
-        d.stock[g]={n:nn,kg:+(nn*avg).toFixed(2)};save();paintPal();
-        head.innerHTML="<b>"+l.name+"</b><em>"+n1(d.cfg.kgNet)+" kg/szt · "+
-      t("palN")+" "+PAL(l.id)+" · "+t("total")+" "+gN(d.stock)+"</em>";};
-      col.appendChild(inp);col.appendChild(sh);grid.appendChild(col);});
-    card.appendChild(grid);sb.appendChild(card);});
+  updStock();
   /* ile z tego przyszło na mojej zmianie — sumarycznie po wszystkich maszynach */
   const sh=LINES.reduce((a,l)=>{G.forEach(g=>{a[g].n+=db[l.id].shift[g].n;a[g].kg+=db[l.id].shift[g].kg;});
     a.u+=db[l.id].utyl.n;return a;},{a1:{n:0,kg:0},a2:{n:0,kg:0},b:{n:0,kg:0},u:0});
@@ -2299,17 +2400,17 @@ function jrEntries(rec){
 function hourly(start,entries){const rows=[];
   for(let h=0;h<12;h++){
     const from=start+h*HOUR,to=from+HOUR;
-    const r={from:from,to:to,g:mkG(),obc:[],uw:[],ps:[]};
+    const r={from:from,to:to,g:mkG(),obc:[],obcT:[],uw:[],ps:[]};
     entries.forEach(function(e){
       if(e.t<from||e.t>=to)return;
       if(e.k==="obc"){if(e.g)GC.forEach(function(x){r.g[x].n+=e.g[x].n;r.g[x].kg+=e.g[x].kg;});
-        if(e.n!=null)r.obc.push(e.n);}
+        if(e.n!=null)r.obc.push(e.n);r.obcT.push({t:e.t,n:e.n});}
       else if(e.k==="zryw")r.uw.push(t("jZryw",{p:e.p}));
       else if(e.k==="wlok")r.uw.push(t("jWlok",{p:e.p}));
       else if(e.k==="noobc")r.uw.push(t("noDoff"));
       else if(e.k==="launch")r.uw.push(t("jLaunch",{n:e.n}));
       else if(e.k==="cyc")r.uw.push(t("jCyc",{n:e.n}));
-      else if(e.k==="obcOff"){r.obc.push(e.n);r.uw.push(t("jObcOff",{n:e.n}));}
+      else if(e.k==="obcOff"){r.obc.push(e.n);r.obcT.push({t:e.t,n:e.n});r.uw.push(t("jObcOff",{n:e.n}));}
       else if(STATEK.indexOf(e.k)>=0)r.ps.push(e);});
     rows.push(r);}
   return rows;}
@@ -2335,6 +2436,42 @@ function paintRap(){
     ss.value=(prev&&list[+prev])?prev:"0";
     drawRap(list[+ss.value]||list[0]);});}
 
+/* ---------- reczne poprawki raportu ----------
+   Tabela wyliczana jest z dziennika, ale operator musi moc poprawic kazde pole przed
+   przepisaniem na papier. Poprawki trzymamy osobno, zeby nie nadpisywac pomiaru:
+   puste pole = wartosc wyliczona, wpisane = wartosc operatora. */
+function rapOvr(rec){
+  if(rec.live){const d=db[rec.m];if(!d.rapOvr)d.rapOvr={};return d.rapOvr;}
+  if(!rec.ovr)rec.ovr={};return rec.ovr;}
+function rapSave(rec){
+  if(rec.live)save();
+  else HIST.save(rec).catch(function(){});}
+function rapSet(rec,h,key,val){
+  const o=rapOvr(rec);if(!o[h])o[h]={};
+  if(val===""||val==null)delete o[h][key]; else o[h][key]=val;
+  if(!Object.keys(o[h]).length)delete o[h];
+  rapSave(rec);}
+function rapGet(rec,h,key){const o=rapOvr(rec)[h];return o&&(key in o)?o[key]:null;}
+
+/* usuniecie podmiany z raportu: z dziennika biezacej zmiany albo z rekordu archiwum */
+function rapDelDoff(rec,ts,nr){
+  if(!confirm(t("rapDelAsk",{n:(nr==null?"?":nr),t:clk(ts)})))return;
+  if(rec.live){const d=db[rec.m];
+    const i=(d.journal||[]).findIndex(function(e){return e.t===ts&&e.k==="obc";});
+    if(i<0){toast(t("rapDelNo"));return;}
+    jeApply(rec.m,d.journal[i],-1);       /* cofa magazyn i licznik zmiany */
+    d.journal.splice(i,1);save();render();}
+  else{const m0=Math.round((ts-rec.t)/60000);
+    const i=(rec.jr||[]).findIndex(function(o){return o.k==="obc"&&o.m===m0;});
+    if(i<0){toast(t("rapDelNo"));return;}
+    const g=rec.jr[i].g;
+    if(g)G.forEach(function(x,k){          /* poprawiamy tez sumy zmiany w archiwum */
+      if(rec[x]){rec[x][0]=Math.max(0,rec[x][0]-g[k][0]);
+                 rec[x][1]=+(rec[x][1]-g[k][1]).toFixed(2);}});
+    rec.jr.splice(i,1);rec.ob=Math.max(0,(rec.ob||0)-1);
+    HIST.save(rec).then(function(){drawRap(rec);});}
+  toast(t("rapDelOk"));}
+
 function drawRap(rec){
   if(!rec){$("rapTable").innerHTML="";$("rapHead").innerHTML="";return;}
   const id=rec.m,d=db[id],kO=kghOne(id);
@@ -2345,35 +2482,72 @@ function drawRap(rec){
     "<div>"+t("rData")+"</div><div class='num'>"+new Date(rec.t).toLocaleDateString(loc())+"</div>"+
     "<div>"+t("rMasz")+"</div><div class='num'>"+nm[1]+" / "+nm[2]+"</div>"+
     "<div>"+t("rZmiana")+"</div><div class='num'>"+(rec.n?"N":"D")+" · "+clk(rec.t)+"–"+clk(rec.t+12*HOUR)+"</div>"+
-    "<div>"+t("rOper")+"</div><div class='num'>"+(OPNR||"–")+"</div>"+
+    "<div>"+t("rOper")+"</div><div class='num'><input id='rhOper' style='text-align:right;max-width:120px'></div>"+
     "<div>"+t("roleRap")+"</div><div class='num'>"+
       t(ROLE==="gora"?"roleG":(ROLE==="wolne"?"roleO":"roleD"))+"</div>"+
-    "<div>"+t("rTeorH")+"</div><div class='num'>"+(kO?n1(kO)+" kg":"–")+"</div>"+
-    "<div>"+t("rTeorZm")+"</div><div class='num'>"+(kO?n1(kO*12)+" kg":"–")+"</div>"+
-    "</div>";
+    "<div>"+t("rTeorH")+"</div><div class='num'><input id='rhKgh' style='text-align:right;max-width:120px'></div>"+
+    "<div>"+t("rTeorZm")+"</div><div class='num' id='rhKgZm'>–</div>"+
+    "</div>"+
+    "<label style='margin:10px 0 0'><span>"+t("rapUwagi")+"</span><input id='rhUw'></label>"+
+    "<div class='hint' id='rapEditHint' style='margin:6px 0 0'></div>";
+  /* naglowek tez poprawialny: zolte pole = wpisane recznie, puste = wyliczone */
+  const hdOper=rapGet(rec,"hd","oper"),hdKgh=rapGet(rec,"hd","kgh");
+  $("rhOper").value=hdOper!=null?hdOper:(OPNR||"");
+  $("rhKgh").value=hdKgh!=null?hdKgh:(kO?n1(kO):"");
+  $("rhUw").value=rapGet(rec,"hd","uw")||"";
+  $("rapEditHint").textContent=t("rapEditHint");
+  const kghNow=parseFloat(String($("rhKgh").value).replace(",","."));
+  $("rhKgZm").textContent=isFinite(kghNow)?n1(kghNow*12)+" kg":"–";
+  [["rhOper","oper"],["rhKgh","kgh"],["rhUw","uw"]].forEach(function(x){
+    $(x[0]).onchange=function(){rapSet(rec,"hd",x[1],$(x[0]).value.trim());drawRap(rec);};});
+  const KOL=["a1","a2","b","c"];
   let h="<table class='rap'><tr><th>"+t("rGodz")+"</th>"+
     GC.map(function(g){return "<th>"+GN[g]+"</th>";}).join("")+
     "<th>"+t("rSuma")+"</th><th>"+t("rObc")+"</th><th>"+t("rUwagi")+"</th>"+
     "<th>"+t("rPstart")+"</th><th>"+t("rPstop")+"</th><th>"+t("rPowod")+"</th></tr>";
   const tot=mkG();let totOb=0;
-  rows.forEach(function(r){
-    const sum=G.reduce(function(a,g){return a+r.g[g].kg;},0);
-    GC.forEach(function(g){tot[g].n+=r.g[g].n;tot[g].kg+=r.g[g].kg;});
-    totOb+=r.obc.length;
+  const esc=function(x){return String(x==null?"":x).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");};
+  const pole=function(hh,k,val,wyl,cls){
+    const nad=rapGet(rec,hh,k);
+    const v=nad!=null?nad:val;
+    return "<input data-h='"+hh+"' data-k='"+k+"' class='"+(nad!=null?"ed ":"")+(cls||"")+
+      "' value=\""+esc(v)+"\" placeholder=\""+esc(wyl||"")+"\">";};
+  rows.forEach(function(r,hi){
     const ps=r.ps[0];
+    /* wartosci wyliczone, ktore poprawka moze nadpisac */
+    const licz={};KOL.forEach(function(g){licz[g]=r.g[g].kg?n1(r.g[g].kg):"";});
+    const kgOf=function(g){const nad=rapGet(rec,hi,g);
+      const x=parseFloat(String(nad!=null?nad:licz[g]).replace(",","."));
+      return isFinite(x)?x:0;};
+    const sum=G.reduce(function(a,g){return a+kgOf(g);},0);
+    GC.forEach(function(g){tot[g].n+=r.g[g].n;tot[g].kg+=kgOf(g);});
+    totOb+=r.obc.length;
+    /* obciagi z tej godziny: numer i krzyzyk do usuniecia */
+    const chipy=r.obcT?r.obcT.map(function(o){
+      return "<span class='obcChip'><b>"+(o.n==null?"?":o.n)+"</b>"+
+        "<button data-del='"+o.t+"' data-nr='"+(o.n==null?"":o.n)+"' title='"+t("rapDel")+"'>×</button></span>";
+    }).join(""):"";
     h+="<tr><td class='h'>"+clk(r.from)+"–"+clk(r.to)+"</td>"+
-      GC.map(function(g){return "<td>"+(r.g[g].kg?n1(r.g[g].kg):"")+"</td>";}).join("")+
-      "<td>"+(sum?n1(sum):"")+"</td>"+
-      "<td>"+(r.obc.length?r.obc.join(", "):"")+"</td>"+
-      "<td class='l'>"+r.uw.join("; ")+"</td>"+
-      "<td>"+(ps?clk(ps.t):"")+"</td>"+
-      "<td>"+(ps&&ps.d?clk(ps.t+ps.d):"")+"</td>"+
-      "<td class='l'>"+(ps?t(STK[ps.k]||ps.k):"")+"</td></tr>";});
+      KOL.map(function(g){return "<td>"+pole(hi,g,licz[g],"")+"</td>";}).join("")+
+      "<td class='num'>"+(sum?n1(sum):"")+"</td>"+
+      "<td class='obc'>"+chipy+pole(hi,"obc","",r.obc.length?r.obc.join(", "):"")+"</td>"+
+      "<td class='l'>"+pole(hi,"uw",r.uw.join("; "),"")+"</td>"+
+      "<td>"+pole(hi,"ps",ps?clk(ps.t):"","--:--")+"</td>"+
+      "<td>"+pole(hi,"pe",(ps&&ps.d)?clk(ps.t+ps.d):"","--:--")+"</td>"+
+      "<td class='l'>"+pole(hi,"pw",ps?t(STK[ps.k]||ps.k):"","")+"</td></tr>";});
   const tk=G.reduce(function(a,g){return a+tot[g].kg;},0);
   h+="<tr class='sum'><td>"+t("sum")+"</td>"+
     GC.map(function(g){return "<td>"+(tot[g].kg?n1(tot[g].kg):"")+"</td>";}).join("")+
     "<td>"+n1(tk)+"</td><td>"+totOb+"</td><td colspan='4'></td></tr></table>";
-  $("rapTable").innerHTML=h;}
+  $("rapTable").innerHTML=h;
+  /* kazde pole zapisuje sie od razu; pusta wartosc wraca do liczby wyliczonej */
+  $("rapTable").querySelectorAll("input").forEach(function(inp){
+    inp.onchange=function(){
+      rapSet(rec,+inp.dataset.h,inp.dataset.k,inp.value.trim());
+      drawRap(rec);};});
+  $("rapTable").querySelectorAll("button[data-del]").forEach(function(b){
+    b.onclick=function(){rapDelDoff(rec,+b.dataset.del,
+      b.dataset.nr===""?null:+b.dataset.nr);};});}
 
 $("rapMach").onchange=paintRap;
 $("rapShift").onchange=function(){drawRap(RAPL[+$("rapShift").value]);};
@@ -2383,10 +2557,15 @@ $("btnRapCsv").onclick=function(){
   const rows=hourly(rec.t,jrEntries(rec));
   const head=[t("rGodz")].concat(GC.map(function(g){return GN[g];}))
     .concat([t("rSuma"),t("rObc"),t("rUwagi"),t("rPstart"),t("rPstop"),t("rPowod")]);
-  const body=rows.map(function(r){const ps=r.ps[0];
-    return [clk(r.from)+"-"+clk(r.to)].concat(GC.map(function(g){return r.g[g].kg?n1(r.g[g].kg):"";}))
-      .concat([n1(G.reduce(function(a,g){return a+r.g[g].kg;},0)),r.obc.join(" "),
-               r.uw.join("; "),ps?clk(ps.t):"",ps&&ps.d?clk(ps.t+ps.d):"",ps?t(STK[ps.k]||ps.k):""]);});
+  const body=rows.map(function(r,hi){const ps=r.ps[0];
+    const wz=function(k,v){const nad=rapGet(rec,hi,k);return nad!=null?nad:v;};
+    return [clk(r.from)+"-"+clk(r.to)].concat(GC.map(function(g){return wz(g,r.g[g].kg?n1(r.g[g].kg):"");}))
+      .concat([n1(G.reduce(function(a,g){
+                 const x=parseFloat(String(wz(g,r.g[g].kg||0)).replace(",","."));
+                 return a+(isFinite(x)?x:0);},0)),
+               wz("obc",r.obc.join(" ")),wz("uw",r.uw.join("; ")),
+               wz("ps",ps?clk(ps.t):""),wz("pe",ps&&ps.d?clk(ps.t+ps.d):""),
+               wz("pw",ps?t(STK[ps.k]||ps.k):"")]);});
   download("raport-"+L_(rec.m).name.replace(/ /g,"")+"-"+
     new Date(rec.t).toISOString().slice(0,10)+".csv",
     [head.join(";")].concat(body.map(function(x){return x.join(";");})).join("\n"));};
