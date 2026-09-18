@@ -184,6 +184,7 @@
         <div id="t_ohRate"></div><div class="num" id="vOhRate">–</div>
         <div id="t_ohEnd"></div><div class="num big" id="vOhEnd">–</div>
       </div>
+      <div class="hint" id="ohActNote" style="margin:6px 0 0"></div>
       <div class="flag n" id="ohFlag"></div>
     </div>
   </section>
@@ -570,7 +571,7 @@ const LINES=[
 const L_=id=>LINES.find(l=>l.id===id), POS=id=>L_(id).pos, PAL=id=>L_(id).pal;
 /* C to odpad, nie gatunek produkcji — nie wchodzi do magazynu, palet ani zlecenia.
    G  — gatunki liczone jako produkcja.  GC — kolumny raportu, razem z C. */
-const APPV="v56";
+const APPV="v57";
 const G=["a1","a2","b"], GC=["a1","a2","b","c"], GN={a1:"A1",a2:"A2",b:"B",c:"C"};
 
 const mkG=()=>({a1:{n:0,kg:0},a2:{n:0,kg:0},b:{n:0,kg:0},c:{n:0,kg:0}});
@@ -582,7 +583,8 @@ function migG(o,kgNet){const r=mkG();if(!o)return r;
 const gN=o=>G.reduce((a,g)=>a+o[g].n,0);
 const gKG=o=>G.reduce((a,g)=>a+o[g].kg,0);
 const DEF=()=>({cfg:{kgNet:3,progA1:3,sh:6,cycMin:0,tAdj:0},
-  ord:{nr:"",lot:"",idx:"",kg:0,kgh:0,pairKgh:1,st:"",dl:"",kolor:false,pack:0,packKg:0,packLog:[],palIds:[]},
+  ord:{nr:"",lot:"",idx:"",kg:0,kgh:0,pairKgh:1,st:"",dl:"",kolor:false,pack:0,packKg:0,packLog:[],palIds:[],
+    prod:0,act:{kg:0,prod:0,t:0}},
   stock:mkG(),shift:mkG(),shB:{zryw:0,wlok:0},
   zryw:0,zrywCycle:0,zrywKg:0,zrywShift:0,zrywPosMs:0,zrywSince:Date.now(),zrywPkg:[],
   zrywPos:[],zrywCycPos:[],wlokPos:[],baranPos:[],zrywKgPos:{},journal:[],autoDoff:true,
@@ -641,7 +643,7 @@ const T={pl:{
  ohOk:"przed terminem o {t}",ohNoData:"Uzupełnij ilość i wydajność, żeby policzyć koniec", ohRate:"Tempo rzeczywiste",ohTeor:"teoretycznie {k} kg/h",
  ohNoStart:"Ustaw początek zlecenia albo naciśnij „Start produkcji”",
  ohFromReal:"Liczone z faktycznej produkcji od startu ({h} h) — koryguje się samo przy każdej palecie",
- ohFromTeor:"Liczone z wydajności z bloczka — po 2 godzinach przejdzie na tempo rzeczywiste",
+ ohFromTeor:"Prognoza z pełnych nawojów bez zrywów — tyle trzeba, żeby dokręcić resztę zlecenia",
  dlInfo:"Termin z bloczka: {d} — orientacyjny, nie wchodzi do wyliczeń",ospd:"Prędkość nawijania (m/min)",
  cycT:"Czas nawijania z panelu maszyny",cycEl:"Namotane (min)",cycLeft:"Do końca (min)",
  cycTot:"Cały cykl (min)",cycApply:"Ustaw z panelu",
@@ -717,9 +719,12 @@ const T={pl:{
  ord:"Zlecenie",onr:"Nr zlecenia",olot:"Lot WG",oidx:"Indeks",okg:"Ilość końcowa (kg)",okgh:"Wydajność (kg/godz)",
  odl:"Data końca zlecenia",opack:"Spakowane w zleceniu",oun:"Niespakowane (magazyn)",
  packIn:"Waga palety albo łączna waga (kg)",packAdd:"+ Dodaj paletę",packSet:"= Ustaw łącznie",
- packUndo:"Cofnij ostatni wpis",packAddOk:"Dodano {k} kg",packSetOk:"Ustawiono {k} kg",
+ packUndo:"Cofnij ostatni wpis",packAddOk:"Dodano {k} kg",packSetOk:"Aktualizacja: wykonane {k} kg",
+ ohAct:"Ostatnia aktualizacja spakowanych kilogramów: {t}",
+ ohActNo:"Bez aktualizacji — licznik idzie z samych podmian. Po wolnych dniach wpisz wagę spakowanych palet i naciśnij „Ustaw łącznie”",
+ jCarry:"Koniec zmiany — {n} szt ({kg} kg) zeszło z magazynu jako spakowane",
  packUndoOk:"Cofnięto {k} kg",packNothing:"Nie ma czego cofać",packBad:"Wpisz wagę",
- packNote:"Po wolnych dniach wpisz łączną wagę spakowanych palet i naciśnij „Ustaw łącznie” — nie trzeba liczyć, ile palet doszło. „Dodaj paletę” dokłada jedną do sumy. Przy zleceniu wspólnym liczy się suma z obu nawijarek.",
+ packNote:"Najpierw popraw sztuki w magazynie, potem wpisz łączną wagę spakowanych palet i naciśnij „Ustaw łącznie” — to aktualizacja: licznik zlecenia dostaje prawdziwą liczbę, a wszystko późniejsze dolicza się od niej. „Dodaj paletę” tylko przenosi kilogramy z magazynu do spakowanych, licznika zlecenia nie zmienia. Przy zleceniu wspólnym liczy się suma z obu nawijarek.",
  packPcs:"≈ {n} szt",packLogT:"Ostatnie wpisy",packSetTag:"łącznie",packAddTag:"paleta",
  omade:"Wykonane",oleft:"Pozostało",oend:"Prognozowany koniec",osh:"Pozostało zmian",ordDone:"Zlecenie wykonane",
  pair:"Wydajność z bloczka dotyczy",pairBoth:"N1A + N1B razem",pairOne:"tylko tej nawijarki",
@@ -825,7 +830,7 @@ const T={pl:{
  ohOk:"before the due date by {t}",ohNoData:"Fill in quantity and output to calculate the finish", ohRate:"Actual rate",ohTeor:"theoretical {k} kg/h",
  ohNoStart:"Set the order start or press \u201eStart production\u201d",
  ohFromReal:"Based on real output since the start ({h} h) — it self-corrects with every pallet",
- ohFromTeor:"Based on the order sheet figure — after 2 hours it switches to the actual rate",
+ ohFromTeor:"Forecast from full packages without breaks — that is what it takes to wind the rest",
  dlInfo:"Sheet due date: {d} — indicative, not used in the calculation",ospd:"Winding speed (m/min)",
  cycT:"Winding time from the machine panel",cycEl:"Wound (min)",cycLeft:"Remaining (min)",
  cycTot:"Full cycle (min)",cycApply:"Set from the panel",
@@ -901,9 +906,12 @@ const T={pl:{
  ord:"Order",onr:"Order no.",olot:"Lot WG",oidx:"Index",okg:"Final quantity (kg)",okgh:"Output (kg/h)",
  odl:"Order due date",opack:"Packed on this order",oun:"Unpacked (stock)",
  packIn:"Pallet weight or total weight (kg)",packAdd:"+ Add a pallet",packSet:"= Set total",
- packUndo:"Undo the last entry",packAddOk:"{k} kg added",packSetOk:"Total set to {k} kg",
+ packUndo:"Undo the last entry",packAddOk:"{k} kg added",packSetOk:"Updated: {k} kg done",
+ ohAct:"Packed kilograms last updated: {t}",
+ ohActNo:"No update yet — the counter runs on doffings alone. After days off enter the weight of the packed pallets and press „Set total”",
+ jCarry:"Shift closed — {n} pcs ({kg} kg) left the stock as packed",
  packUndoOk:"{k} kg undone",packNothing:"Nothing to undo",packBad:"Enter a weight",
- packNote:"After days off, enter the total weight of packed pallets and press \u201eSet total\u201d — no need to work out how many pallets were added. \u201eAdd a pallet\u201d adds one to the running total. On a shared order the sum of both winders counts.",
+ packNote:"First correct the piece counts in stock, then enter the total weight of the packed pallets and press \u201eSet total\u201d — that is the update: the order counter gets the true figure and everything produced later is added on top. \u201eAdd a pallet\u201d only moves kilograms from stock to packed; it does not change the order counter. On a shared order the sum of both winders counts.",
  packPcs:"\u2248 {n} pcs",packLogT:"Recent entries",packSetTag:"total",packAddTag:"pallet",
  omade:"Produced",oleft:"Remaining",oend:"Forecast finish",osh:"Shifts remaining",ordDone:"Order complete",
  pair:"Order sheet output covers",pairBoth:"N1A + N1B together",pairOne:"this winder only",
@@ -972,6 +980,13 @@ LINES.forEach(l=>{const d=DEF(),s=SEED[l.id]||{},o=db[l.id]||{};
   if(!oo.packKg&&oo.pack)oo.packKg=oo.pack*((o.cfg&&o.cfg.kgNet)||d.cfg.kgNet); /* migracja ze sztuk */
   if(!Array.isArray(oo.packLog))oo.packLog=[];
   if(!Array.isArray(oo.palIds))oo.palIds=[];
+  /* Dane sprzed licznika produkcji: dotychczasowe "wykonane" siedzialo w spakowanych
+     kilogramach plus magazyn. Zapisujemy je jako aktualizacje, zeby zlecenie nie
+     spadlo po aktualizacji programu na zero. */
+  if(o.ord&&o.ord.prod===undefined){const sg=migG(o.stock,kn);
+    oo.prod=0;oo.act={kg:+((oo.packKg||0)+gKG(sg)).toFixed(2),prod:0,t:Date.now()};}
+  if(typeof oo.prod!=="number")oo.prod=0;
+  if(!oo.act||typeof oo.act.kg!=="number")oo.act={kg:0,prod:0,t:0};
   db[l.id]={...d,...s,...o,cfg:{...d.cfg,...(o.cfg||{})},ord:oo,
     stock:migG(o.stock,kn),shift:migG(o.shift||o.cnt,kn),
     shB:{zryw:0,wlok:0,...(o.shB||{})},log:o.log||[],events:o.events||[],
@@ -1124,7 +1139,12 @@ function rollShift(){const now=Date.now();
       d.shKey=key;d.dwShift=0;d.odpShift=0;d.konShift=0;d.zrywShift=0;d.wlokShift=0;d.shiftDoffs=0;d.firstDoff=0;
       d.labSet=null;d.shift=mkG();d.shB={zryw:0,wlok:0};d.events=[];d.utyl={n:0,kg:0};
       d.zrywPosMs=0;d.zrywSince=now;d.journal=[];
-      d.zrywPos=[];d.zrywCycPos=[];d.wlokPos=[];d.baranPos=[];d.zrywKgPos={};d.rapOvr={};}});
+      d.zrywPos=[];d.zrywCycPos=[];d.wlokPos=[];d.baranPos=[];d.zrywKgPos={};d.rapOvr={};
+      /* Kazda zmiana pakuje swoje palety, wiec nawoje z zamknietej zmiany schodza z magazynu
+         jako spakowane teoretycznie. Kilogramy siedza juz w ord.prod, wiec licznik zlecenia
+         sie nie rusza — magazyn pokazuje tylko to, co czeka na spakowanie teraz. */
+      const zN=gN(d.stock),zKg=gKG(d.stock);
+      if(zN>0){d.stock=mkG();jrn(l.id,"carryPack",{n:zN,kg:n1(zKg)});}}});
   if(Math.random()<0.02)HIST.prune();}
 /* obciąg trafia do laboratorium rano po nocce, a lab nie pracuje w sobotę i niedzielę,
    więc oddajemy w noce zaczynające się w niedzielę, poniedziałek, wtorek, środę i czwartek */
@@ -1516,14 +1536,26 @@ function scopeOf(id){const nr=(db[id].ord.nr||"").trim(),p=L_(id).pair;
   return (nr&&p&&db[p]&&(db[p].ord.nr||"").trim()===nr)?[id,p]:[id];}
 const ordScope=()=>scopeOf(cur);
 const packKgTotal=()=>ordScope().reduce((a,id)=>a+(db[id].ord.packKg||0),0);
+/* Wykonane w zleceniu = ostatnia aktualizacja spakowanych kilogramow plus wszystko,
+   co maszyna nakrecila po niej. Magazyn do tej liczby nie wchodzi: stoi w nim tylko to,
+   co czeka na spakowanie na biezacej zmianie. Dopoki nie ma aktualizacji, liczy sie
+   sama produkcja z podmian. */
+function madeKgOf(id){const o=db[id].ord,a=o.act||{kg:0,prod:0,t:0};
+  return +((a.kg||0)+Math.max(0,(o.prod||0)-(a.prod||0))).toFixed(2);}
+const madeScope=ids=>+ids.reduce(function(s,id){return s+madeKgOf(id);},0).toFixed(2);
+const actAt=ids=>ids.reduce(function(m,id){const a=db[id].ord.act;
+  return Math.max(m,(a&&a.t)||0);},0);
 /* Nowe zlecenie musi zaczynac sie od zera. Spakowane kilogramy i nawoje w magazynie
    naleza do starego numeru — zostawione, wchodza w postep nowego zlecenia i naglowek
    od razu pokazuje "zakonczone". Liczymy je i zdejmujemy tylko z tej maszyny,
    zeby nie ruszyc maszyn, ktore stary numer kreca dalej. */
 function ordSum(id){const x=db[id];
-  return{kg:+(((x.ord.packKg||0)+gKG(x.stock))).toFixed(2),n:gN(x.stock)};}
+  /* do ostrzezen bierzemy to, co wieksze: policzone wykonanie albo wpisane spakowane —
+     zeby pytanie o wyzerowanie nie ominelo zadnego z tych licznikow */
+  return{kg:Math.max(madeKgOf(id),x.ord.packKg||0),n:gN(x.stock)};}
 function ordZero(id){const x=db[id];
   x.ord.packKg=0;x.ord.pack=0;x.ord.packLog=[];x.ord.palIds=[];
+  x.ord.prod=0;x.ord.act={kg:0,prod:0,t:0};      /* licznik zlecenia też od zera */
   x.stock=mkG();}
 function ordNrSwap(oldNr,newNr){
   oldNr=(oldNr||"").trim();newNr=(newNr||"").trim();
@@ -1535,21 +1567,31 @@ function ordNrSwap(oldNr,newNr){
   save();loadInputs();paint();buildDrawer();toast(t("zeroOk",{k:n0(c.kg)}));}
 function packPush(kg,set,ded){const o=S().ord;
   o.packLog.push({t:Date.now(),kg,set,ded:ded||null,
-    prev:set?ordScope().map(id=>[id,db[id].ord.packKg||0]):null});
+    prev:set?ordScope().map(id=>[id,db[id].ord.packKg||0,
+      JSON.parse(JSON.stringify(db[id].ord.act||{kg:0,prod:0,t:0}))]):null});
   if(o.packLog.length>12)o.packLog=o.packLog.slice(-12);}
 $("btnPackAdd").onclick=()=>{const v=parseFloat(String($("packIn").value).replace(",","."));
   if(!isFinite(v)||v<=0){toast(t("packBad"));return;}
   const o=S().ord;packPush(v,false);o.packKg=+((o.packKg||0)+v).toFixed(2);
   $("packIn").value="";save();paint();buildDrawer();toast(t("packAddOk",{k:n1(v)}));};
+/* Aktualizacja: operator podaje, ile kilogramow zlecenia jest naprawde spakowanych.
+   Do tego doliczamy to, co stoi teraz niespakowane w magazynie — razem daje to prawdziwe
+   "wykonane" na ten moment. Wszystko, co maszyny nakreca pozniej, dolicza sie od tego punktu. */
 $("btnPackSet").onclick=()=>{const v=parseFloat(String($("packIn").value).replace(",","."));
   if(!isFinite(v)||v<0){toast(t("packBad"));return;}
+  const sc=ordScope(),now=Date.now();
+  const st=sc.reduce(function(a,id){return a+gKG(db[id].stock);},0);
   packPush(v,true);
-  ordScope().forEach(id=>{db[id].ord.packKg=0;});      /* suma dotyczy całego zlecenia */
-  S().ord.packKg=+v.toFixed(2);
-  $("packIn").value="";save();paint();buildDrawer();toast(t("packSetOk",{k:n1(v)}));};
+  sc.forEach(function(id){const x=db[id].ord;
+    x.packKg=0;x.act={kg:0,prod:x.prod||0,t:now};});
+  const o=S().ord;o.packKg=+v.toFixed(2);
+  o.act={kg:+(v+st).toFixed(2),prod:o.prod||0,t:now};
+  $("packIn").value="";save();paint();buildDrawer();
+  toast(t("packSetOk",{k:n1(v+st)}));};
 $("btnPackUndo").onclick=()=>{const o=S().ord;const e=o.packLog.pop();
   if(!e){toast(t("packNothing"));return;}
-  if(e.set&&e.prev)e.prev.forEach(([id,kg])=>{if(db[id])db[id].ord.packKg=kg;});
+  if(e.set&&e.prev)e.prev.forEach(([id,kg,ac])=>{if(!db[id])return;
+    db[id].ord.packKg=kg;if(ac)db[id].ord.act=ac;});
   else o.packKg=Math.max(0,+((o.packKg||0)-e.kg).toFixed(2));
   if(e.ded){const st=S().stock[e.ded.g];st.n+=e.ded.n;st.kg=+(st.kg+e.ded.kg).toFixed(2);}
   save();paint();buildDrawer();toast(t("packUndoOk",{k:n1(e.kg)}));};
@@ -1641,7 +1683,9 @@ function registerDoff(id,ts,how){
   if(f.w.length)parts.push(t("jWlok",{p:f.w.join(", ")}));
   if(f.b.length)parts.push(t("jBaran",{p:f.b.join(", ")}));
   const scrap=(d.obciag===0)||(d.state==="proba");
-  if(roleOff()&&how==="auto"){       /* mnie nie ma — numer leci dalej, danych nie zmyslamy */
+  if(roleOff()&&how==="auto"){       /* mnie nie ma — do raportu nic nie wpisujemy,
+       ale maszyna krecila: do zlecenia liczymy pelne nawoje na wszystkich pozycjach */
+    d.ord.prod=+((d.ord.prod||0)+POS(id)*kn).toFixed(2);
     jrnAt(id,ts,"obcOff",{n:d.obciag});
     d.obciag=(d.obciag||0)+1;d.shiftDoffs=(d.shiftDoffs||0)+1;
     d.log.push({t:ts,d:downNow(id)});if(d.log.length>24)d.log=d.log.slice(-24);
@@ -1654,7 +1698,8 @@ function registerDoff(id,ts,how){
   if(scrap){d.utyl.n+=good+bad;d.utyl.kg+=add.a1.kg+add.a2.kg+add.b.kg;}
   else{G.forEach(function(g){d.stock[g].n+=add[g].n;d.stock[g].kg+=add[g].kg;
                              d.shift[g].n+=add[g].n;d.shift[g].kg+=add[g].kg;});
-       d.shB.zryw+=f.all.length;d.shB.wlok+=f.w.length;}
+       d.shB.zryw+=f.all.length;d.shB.wlok+=f.w.length;
+       d.ord.prod=+((d.ord.prod||0)+add.a1.kg+add.a2.kg+add.b.kg).toFixed(2);}
   jrnAt(id,ts,"obc",{n:d.obciag,g:add,a:desc,w:wOne,how:how,s:scrap});
   d.obciag=(d.obciag||0)+1;d.shiftDoffs=(d.shiftDoffs||0)+1;
   d.log.push({t:ts,d:downNow(id)});if(d.log.length>24)d.log=d.log.slice(-24);
@@ -2093,12 +2138,14 @@ function paint(){
 
   /* naglowek zlecenia: status i prognoza konca w dniach */
   (function(){const o2=d.ord,sc2=scopeOf(cur);
-    let made=0,teor=0,st=0;
+    let teor=0,st=0;
+    const made=madeScope(sc2),aT=actAt(sc2);
     sc2.forEach(function(id){const x=db[id];
-      made+=(x.ord.packKg||0)+gKG(x.stock);
       if(counts(id))teor+=kghEff(id);
       const p=x.ord.st?new Date(x.ord.st).getTime():0;
       if(p&&(!st||p<st))st=p;});
+    /* pod licznikiem: kiedy ostatnio ktos podal prawdziwa wage spakowanych palet */
+    $("ohActNote").textContent=aT?t("ohAct",{t:stp(aT)}):t("ohActNo");
     const tot=o2.kg||0,left=Math.max(0,tot-made);
     const done=left<=0&&tot>0;
     const kolor=!!o2.kolor;
@@ -2113,8 +2160,12 @@ function paint(){
     /* Tempo rzeczywiste liczymy ze spakowanych i lezacych kilogramow podzielonych przez
        czas od startu produkcji. Siedza w nim wszystkie postoje, zrywy i odpad, wiec
        prognoza sama sie koryguje w miare pakowania palet. */
-    const elapsed=st?(now-st)/HOUR:0;
-    const real=(elapsed>=2&&made>=10)?made/elapsed:0;
+    /* Tempo rzeczywiste to produkcja od ostatniej aktualizacji (albo od startu zlecenia)
+       podzielona przez ten czas — siedza w nim postoje, zrywy i odpad. */
+    const from=aT||st,elapsed=from?(now-from)/HOUR:0;
+    const sinceAct=sc2.reduce(function(a,id){const x=db[id].ord,ac=x.act||{prod:0};
+      return a+Math.max(0,(x.prod||0)-(aT?(ac.prod||0):0));},0);
+    const real=(elapsed>=2&&sinceAct>=10)?sinceAct/elapsed:0;
     $("vOhRate").textContent=real
       ?n1(real)+" kg/h"+(teor?" · "+Math.round(real/teor*100)+"%":"")
       :(teor?t("ohTeor",{k:n1(teor)}):"–");
@@ -2125,15 +2176,17 @@ function paint(){
       fl.textContent=made>=tot?t("ohKolorOver",{k:n0(made-tot)}):t("ohKolorNote",{k:n0(left)});
       return;}
     if(done){$("vOhEnd").textContent=t("ohDone2");fl.className="flag ok";fl.textContent=t("ohDone2");return;}
-    if(!tot||!st){$("vOhEnd").textContent="–";fl.className="flag n";
-      fl.textContent=st?t("ohNoData"):t("ohNoStart");return;}
-    const rate=real||teor;
+    if(!tot){$("vOhEnd").textContent="–";fl.className="flag n";
+      fl.textContent=t("ohNoStart");return;}
+    /* Prognoza konca liczona z pelnych nawojow bez zrywow — tak jak umawialismy sie
+       liczyc czas potrzebny na dokrecenie reszty zlecenia. */
+    const rate=teor||real;
     if(rate<=0){$("vOhEnd").textContent="–";fl.className="flag n";fl.textContent=t("ohNoData");return;}
     const ms=left/rate*HOUR,end=now+ms;
     const dd=Math.floor(ms/86400000),hh=Math.floor(ms%86400000/HOUR),mi=Math.round(ms%HOUR/60000);
     $("vOhEnd").textContent=stp(end)+" · "+(dd?t("ohIn",{d:dd,h:hh}):t("ohInH",{h:hh,m:mi}));
     fl.className="flag n";
-    fl.textContent=real?t("ohFromReal",{h:n1(elapsed)}):t("ohFromTeor");})();
+    fl.textContent=t("ohFromTeor");})();
 
   const hv=handover(cur);
   $("vHA1").textContent=hv.a1n+" szt · "+n1(hv.a1kg)+" kg"+
@@ -2167,9 +2220,9 @@ function paint(){
   pl.forEach(e=>{const r=document.createElement("div");r.className="log";
     r.innerHTML="<span>"+stp(e.t)+" · "+t(e.set?"packSetTag":"packAddTag")+"</span><span>"+
       (e.set?"= ":"+ ")+n1(e.kg)+" kg</span>";pb.appendChild(r);});
-  let madeKg=0,rate=0,nLog=0,anyRe=false;const active=[];
+  let rate=0,nLog=0,anyRe=false;const active=[];
+  const madeKg=madeScope(sc);
   sc.forEach(id=>{const x=db[id];
-    madeKg+=(x.ord.packKg||0)+gKG(x.stock);
     if(!counts(id))return;active.push(L_(id).name);
     const r=kghRe(id);if(r>0){anyRe=true;nLog+=Math.max(0,x.log.length-1);}rate+=r>0?r:kghEff(id);});
   const rf=$("runFlag");
@@ -2198,7 +2251,7 @@ function paint(){
 }
 
 /* ---------- dziennik: render ---------- */
-const JL={ordZero:"jZero",ordEnd:"jEnd",koniec:"stKoniec",rozruch:"stRozruch",prod0:"jProd0",already:"jAlready",lostLoad:"jLost",obcOff:"jObcOff",kolorOn:"jKolorOn",kolorOff:"jKolorOff",cyc:"jCyc",baran:"jBaran",baranOff:"jBaranOff",obc:"jObc",noobc:"jNoObc",zryw:"jZryw",zrywOff:"jZrywOff",wlok:"jWlok",wlokOff:"jWlokOff",
+const JL={ordZero:"jZero",ordEnd:"jEnd",carryPack:"jCarry",koniec:"stKoniec",rozruch:"stRozruch",prod0:"jProd0",already:"jAlready",lostLoad:"jLost",obcOff:"jObcOff",kolorOn:"jKolorOn",kolorOff:"jKolorOff",cyc:"jCyc",baran:"jBaran",baranOff:"jBaranOff",obc:"jObc",noobc:"jNoObc",zryw:"jZryw",zrywOff:"jZrywOff",wlok:"jWlok",wlokOff:"jWlokOff",
   run:"jRun",start:"jStart",first:"jFirst",launch:"jLaunch",
   odpad:"stOdpad",awaria:"stAwaria",stop:"stopped",proba:"stProba"};
 function paintJrn(){const d=S(),box=$("jrnBox");box.innerHTML="";
