@@ -570,7 +570,7 @@ const LINES=[
 const L_=id=>LINES.find(l=>l.id===id), POS=id=>L_(id).pos, PAL=id=>L_(id).pal;
 /* C to odpad, nie gatunek produkcji — nie wchodzi do magazynu, palet ani zlecenia.
    G  — gatunki liczone jako produkcja.  GC — kolumny raportu, razem z C. */
-const APPV="v55";
+const APPV="v56";
 const G=["a1","a2","b"], GC=["a1","a2","b","c"], GN={a1:"A1",a2:"A2",b:"B",c:"C"};
 
 const mkG=()=>({a1:{n:0,kg:0},a2:{n:0,kg:0},b:{n:0,kg:0},c:{n:0,kg:0}});
@@ -667,7 +667,8 @@ const T={pl:{
  jManual:"ręcznie",manAsk:"Podmienić teraz, przed czasem? Cykl zacznie się liczyć od nowa.",
  manAsk2:"Podmiana teraz: {n} szt × {w} kg, nawijane {t}.\n\nCykl zacznie się liczyć od nowa. Zapisać?",
  manAskLow:"Uwaga — nawoje są prawie puste: {n} szt × {w} kg, nawijane dopiero {t}.\n\nJeśli podmiana już była, nie zapisuj jej drugi raz. Zapisać mimo to?",
- manOk:"Podmiana zapisana, cykl liczy się od nowa",pozWlok:"Włókienko — dotknij pozycji",
+ manOk:"Podmiana zapisana, cykl liczy się od nowa",
+ zeroLoad:"Obciąg {n} zaczął się od zera — poprzedni nie miał jeszcze wagi, więc nic nie zapisano",pozWlok:"Włókienko — dotknij pozycji",
  noDoff:"Nie podmieniła",btnNoDoff:"Nie podmieniła",
  noDoffOk:"Zapisane — nitka leci w odpad. Przewlecz pozycje i naciśnij Start",
  noDoffAsk:"Podmiana się nie udała — nitki zerwane na wszystkich pozycjach.\n\nNawoje zapisuję normalnie: {n} szt × {w} kg — od {p} kg A1, niżej A2, pozycje z baranem i zrywem na B.\n\nNitka z ekstrudera będzie liczona jako odpad, dopóki nie naciśniesz Start.\n\nZapisać?",
@@ -850,7 +851,8 @@ const T={pl:{
  jManual:"manual",manAsk:"Doff now, ahead of time? The cycle will restart.",
  manAsk2:"Doffing now: {n} pcs × {w} kg, wound for {t}.\n\nThe cycle will restart. Save?",
  manAskLow:"Careful — the packages are almost empty: {n} pcs × {w} kg, wound for only {t}.\n\nIf the doffing was already recorded, do not record it twice. Save anyway?",
- manOk:"Doffing saved, cycle restarted",pozWlok:"Filament fault — tap the position",
+ manOk:"Doffing saved, cycle restarted",
+ zeroLoad:"Load {n} starts from zero — the previous one had no weight yet, so nothing was recorded",pozWlok:"Filament fault — tap the position",
  noDoff:"Did not doff",btnNoDoff:"Did not doff",
  noDoffOk:"Logged — the yarn goes to waste. Re-thread the positions and press Start",
  noDoffAsk:"The doffing failed — the yarn broke on every position.\n\nThe packages are recorded normally: {n} pcs × {w} kg — A1 from {p} kg, below that A2, positions with a shaft wrap or a break go to B.\n\nThe yarn from the extruder counts as waste until you press Start.\n\nSave?",
@@ -1817,9 +1819,15 @@ $("btnResume").onclick=()=>{const d=S(),from=d.state,now=Date.now();
         d.utyl.kg=+(d.utyl.kg+all).toFixed(2);
         jrn(cur,"lostLoad",{kg:n1(all)});nowy();}
       else registerDoff(cur,now,"man");   /* liczy wage i gatunek, sam podnosi numer */
-    }else nowy();
+    }else{nowy();toast(t("zeroLoad",{n:d.obciag}));}
   }
-  setState("run");};
+  setState("run");
+  /* Minuty postoju nalezaly do obciagu, ktory wlasnie zamknelismy. setState dopisuje je
+     do dwDoff juz PO tym, jak ruszyl nowy nawoj \u2014 i swiezy obciag zaczynal z kilkoma
+     minutami przestoju na karku: waga stala na zerze, odliczanie celowalo kilka minut
+     do przodu, a kolejny Stop/Start zamykal nawoj jako pusty i nic nie zapisywal.
+     Postoj zostaje w liczniku zmiany (dwShift), z obciagu schodzi. */
+  d.dwDoff=0;save();paint();};
 /* „Puszczone pozycje" wracają przy podmianie na komplet (8 albo 6) — operator koryguje,
    jeśli faktycznie ruszyło mniej */
 /* Pozycje zaznacza się dotknięciem — wiadomo, która się zerwała, a nie tylko ile ich było. */
