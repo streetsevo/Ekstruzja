@@ -266,6 +266,7 @@
       <button class="tgl back" id="btnResume" style="grid-column:1/-1" hidden></button>
       <button class="tgl" id="btnStop"></button>
       <button class="tgl" id="btnAwaria"></button>
+      <button class="tgl" id="btnNoDoff" style="grid-column:1/-1"></button>
     </div>
     <div class="pad">
       <div class="clock num" id="cd">--:--:--</div>
@@ -569,7 +570,7 @@ const LINES=[
 const L_=id=>LINES.find(l=>l.id===id), POS=id=>L_(id).pos, PAL=id=>L_(id).pal;
 /* C to odpad, nie gatunek produkcji — nie wchodzi do magazynu, palet ani zlecenia.
    G  — gatunki liczone jako produkcja.  GC — kolumny raportu, razem z C. */
-const APPV="v51";
+const APPV="v55";
 const G=["a1","a2","b"], GC=["a1","a2","b","c"], GN={a1:"A1",a2:"A2",b:"B",c:"C"};
 
 const mkG=()=>({a1:{n:0,kg:0},a2:{n:0,kg:0},b:{n:0,kg:0},c:{n:0,kg:0}});
@@ -587,14 +588,14 @@ const DEF=()=>({cfg:{kgNet:3,progA1:3,sh:6,cycMin:0,tAdj:0},
   zrywPos:[],zrywCycPos:[],wlokPos:[],baranPos:[],zrywKgPos:{},journal:[],autoDoff:true,
   wlok:0,wlokShift:0,launched:0,labSet:null,
   state:"run",stateSince:Date.now(),odpShift:0,konShift:0,events:[],preProd:false,
-  obciag:0,shiftDoffs:0,utyl:{n:0,kg:0},spd:0,firstDoff:0,
+  obciag:0,shiftDoffs:0,utyl:{n:0,kg:0},spd:0,firstDoff:0,noDoff:false,
   doffStart:Date.now(),log:[],dwDoff:0,dwShift:0,shKey:""});
 const SEED={
  pp_e1_n1a:{spd:2052,ord:{nr:"872600213",lot:"E1007P",idx:"POY-PP-09048/1-SD-7030-LEG-N",kg:1600,kgh:17.7,pairKgh:1,dl:"2026-09-16T00:00",pack:0}},
  pp_e1_n1b:{spd:2052,ord:{nr:"872600213",lot:"E1007P",idx:"POY-PP-09048/1-SD-7030-LEG-N",kg:1600,kgh:17.7,pairKgh:1,dl:"2026-09-16T00:00",pack:0}}};
 
 const T={pl:{
- app:"Ekstruzja",pick:"Wybierz maszynę",vstock:"Magazyn i palety",day:"Zmiana dzienna",night:"Zmiana nocna",
+ app:"Ekstruzja",pick:"Wybierz maszynę",gPA:"PA — poliamid",gPP:"PP — polipropylen",vstock:"Magazyn i palety",day:"Zmiana dzienna",night:"Zmiana nocna",
  doff:"Najbliższa podmiana",doffBtn:"Podmiana",at:"o {t}",late:"Opóźnienie {t}",doffOk:"Zapisano podmianę",
  nwDoff:"Nawoje z tej podmiany",cycTh:"Cykl wg zlecenia",cycRe:"Cykl zmierzony",dwDoff:"Postój od podmiany",
  run:"Produkcja",stopped:"Postój",stOdpad:"Odpad — przewlekanie",stAwaria:"Awaria — nitka w odpad",
@@ -667,8 +668,9 @@ const T={pl:{
  manAsk2:"Podmiana teraz: {n} szt × {w} kg, nawijane {t}.\n\nCykl zacznie się liczyć od nowa. Zapisać?",
  manAskLow:"Uwaga — nawoje są prawie puste: {n} szt × {w} kg, nawijane dopiero {t}.\n\nJeśli podmiana już była, nie zapisuj jej drugi raz. Zapisać mimo to?",
  manOk:"Podmiana zapisana, cykl liczy się od nowa",pozWlok:"Włókienko — dotknij pozycji",
- noDoff:"Nie podmieniła",noDoffOk:"Zapisano — przewlecz maszynę i naciśnij „Maszyna puszczona”",
- noDoffAsk:"Maszyna nie podmieniła, więc trzeba przewlec wszystkie pozycje. Przełączyć na odpad?",
+ noDoff:"Nie podmieniła",btnNoDoff:"Nie podmieniła",
+ noDoffOk:"Zapisane — nitka leci w odpad. Przewlecz pozycje i naciśnij Start",
+ noDoffAsk:"Podmiana się nie udała — nitki zerwane na wszystkich pozycjach.\n\nNawoje zapisuję normalnie: {n} szt × {w} kg — od {p} kg A1, niżej A2, pozycje z baranem i zrywem na B.\n\nNitka z ekstrudera będzie liczona jako odpad, dopóki nie naciśniesz Start.\n\nZapisać?",
  doffAtNote:"Puste pole = zapisz wszystkie podmiany, które już się odbyły. Wpisana godzina = ta jedna.",
  catchAsk:"Od ostatniej podmiany minęło {n} godzin podmiany ({a} – {b}). Zapisać je? Wcześniejsze wejdą jako pełne A1, ostatnią opiszesz sam.",
  catchOk:"Zapisano {n} zaległych podmian",
@@ -678,7 +680,7 @@ const T={pl:{
  jeSave:"Zapisz poprawkę",jeDel:"Usuń podmianę",jeCancel:"Anuluj",
  jeOk:"Poprawka zapisana",jeDelAsk:"Usunąć tę podmianę z dziennika i z magazynu?",jeDelOk:"Usunięto",jrnEmpty:"Jeszcze nic się nie wydarzyło",
  zrywOff:"x",jrnNote:"Wszystko z godziną. Postój, awaria i odpad dostają czas trwania w chwili puszczenia maszyny.",
- jObc:"Podmiana nr {n} — {a}",jNoObc:"Nie podmieniła — obciąg {n}",
+ jObc:"Podmiana nr {n} — {a}",jNoObc:"Nie podmieniła — obciąg {n}, przewlekanie wszystkich pozycji",
  jZryw:"Zryw — pozycja {p}",jZrywOff:"Zryw odwołany — pozycja {p}",
  jWlok:"Włókienko — pozycja {p}",jWlokOff:"Włókienko odwołane — pozycja {p}",
  jRun:"Maszyna puszczona",jStart:"Start produkcji — nowe zlecenie",
@@ -776,7 +778,7 @@ const T={pl:{
  actShort:"Brakuje {x} szt do palety — razem {v} z {norm}",
  actNone:"Za mało na paletę",afterLab:"po obciągu",total:"Razem"},
  en:{
- app:"Extrusion",pick:"Select a machine",vstock:"Stock and pallets",day:"Day shift",night:"Night shift",
+ app:"Extrusion",pick:"Select a machine",gPA:"PA — polyamide",gPP:"PP — polypropylene",vstock:"Stock and pallets",day:"Day shift",night:"Night shift",
  doff:"Next doffing",doffBtn:"Doffing",at:"at {t}",late:"Overdue by {t}",doffOk:"Doffing logged",
  nwDoff:"Packages from this doffing",cycTh:"Cycle per order sheet",cycRe:"Measured cycle",dwDoff:"Downtime since doffing",
  run:"Production",stopped:"Stopped",stOdpad:"Waste — re-threading",stAwaria:"Breakdown — yarn to waste",
@@ -849,8 +851,9 @@ const T={pl:{
  manAsk2:"Doffing now: {n} pcs × {w} kg, wound for {t}.\n\nThe cycle will restart. Save?",
  manAskLow:"Careful — the packages are almost empty: {n} pcs × {w} kg, wound for only {t}.\n\nIf the doffing was already recorded, do not record it twice. Save anyway?",
  manOk:"Doffing saved, cycle restarted",pozWlok:"Filament fault — tap the position",
- noDoff:"Did not doff",noDoffOk:"Logged — re-thread the machine and press \u201eMachine started\u201d",
- noDoffAsk:"The machine did not doff, so every position has to be re-threaded. Switch to waste?",
+ noDoff:"Did not doff",btnNoDoff:"Did not doff",
+ noDoffOk:"Logged — the yarn goes to waste. Re-thread the positions and press Start",
+ noDoffAsk:"The doffing failed — the yarn broke on every position.\n\nThe packages are recorded normally: {n} pcs × {w} kg — A1 from {p} kg, below that A2, positions with a shaft wrap or a break go to B.\n\nThe yarn from the extruder counts as waste until you press Start.\n\nSave?",
  doffAtNote:"Empty field = record every doffing that has already happened. A time = that one only.",
  catchAsk:"{n} doffing times have passed since the last one ({a} – {b}). Record them? The earlier ones go in as full A1, you describe the last one yourself.",
  catchOk:"{n} missed doffings recorded",
@@ -860,7 +863,7 @@ const T={pl:{
  jeSave:"Save the correction",jeDel:"Delete the doffing",jeCancel:"Cancel",
  jeOk:"Correction saved",jeDelAsk:"Delete this doffing from the journal and from stock?",jeDelOk:"Deleted",jrnEmpty:"Nothing has happened yet",
  zrywOff:"x",jrnNote:"Everything is timestamped. Stops, breakdowns and waste get their duration the moment the machine starts again.",
- jObc:"Doffing no. {n} — {a}",jNoObc:"Did not doff — load {n}",
+ jObc:"Doffing no. {n} — {a}",jNoObc:"Did not doff — load {n}, every position re-threaded",
  jZryw:"Break — position {p}",jZrywOff:"Break cleared — position {p}",
  jWlok:"Filament fault — position {p}",jWlokOff:"Filament fault cleared — position {p}",
  jRun:"Machine started",jStart:"Start production — new order",
@@ -1308,7 +1311,7 @@ function buildDrawer(){const box=$("dlist");box.innerHTML="";
   box.appendChild(hv);
   let g="";
   LINES.forEach(l=>{if(l.g!==g){g=l.g;const h=document.createElement("div");h.className="grp";
-      h.textContent=g==="PA"?"PA — poliamid / polyamide":"PP — polipropylen / polypropylene";box.appendChild(h);}
+      h.textContent=t(g==="PA"?"gPA":"gPP");box.appendChild(h);}
     const d=db[l.id],b=document.createElement("button");
     b.className="ln";b.dataset.g=l.g;b.setAttribute("aria-current",String(view==="line"&&l.id===cur));
     b.innerHTML='<i></i><div><b></b><em></em></div>';
@@ -1347,7 +1350,7 @@ function applyLang(){document.documentElement.lang=lang;
   for(const i in LBL){const e=$(i);if(e)e.textContent=t(LBL[i]);}
   $("btnDoff").textContent=t("doffBtn");$("btnReset").textContent=t("reset");
   $("dpSave").textContent=t("dpSave");$("dpCancel").textContent=t("dpCancel");
-  ["btnAwaria","btnStop","btnKoniec","btnStart","btnResume","btnAlready","btnKolor"]
+  ["btnAwaria","btnStop","btnKoniec","btnStart","btnResume","btnAlready","btnKolor","btnNoDoff"]
     .forEach(b=>$(b).textContent=t(b));
   $("t_zycieT").textContent=t("zycieT");$("zycieNote").textContent=t("zycieNote");
   $("odpNote").textContent=t("odpNote");$("notifNote").textContent=t("notifNote");
@@ -1664,11 +1667,17 @@ function autoDoffs(){const now=Date.now();let any=false;
   LINES.forEach(function(l){const d=db[l.id];
     if(d.autoDoff===false||RUNS.indexOf(d.state)<0)return;
     let c=cycMs(l.id),g=0;
-    if(c<20*60000)return;
+    if(cycSick(l.id))return;
     while(g++<24){
-      const due=d.doffStart+c+downNow(l.id)+(d.cfg.tAdj||0)*60000;
+      const adj=(d.cfg.tAdj||0)*60000,raw=d.doffStart+downNow(l.id);
+      /* wpisana godzina pierwszej podmiany jest terminem sama dla siebie —
+         dopiero kolejne licza sie co pelny cykl od niej */
+      const due=(raw>now?raw:raw+c)+adj;
       if(due>now)break;
       if(!registerDoff(l.id,due,"auto"))break;
+      /* kotwice trzymamy bez korekty: inaczej te pare minut doklada sie
+         do kazdej nastepnej podmiany i godziny uciekaja z kazdym cyklem */
+      d.doffStart=due-adj;
       any=true;c=cycMs(l.id);}});
   if(any)save();}
 
@@ -1721,6 +1730,19 @@ function setState(ns){const d=S(),n=Date.now();flushZryw(cur);
   d.events.push({t:n,s:ns});if(d.events.length>24)d.events=d.events.slice(-24);
   save();paint();buildDrawer();}
 $("btnAwaria").onclick=()=>setState("awaria");
+/* Podmiana sie nie udala: nitki zerwalo na wszystkich pozycjach. To, co wisialo
+   na maszynie, przepada, a nitka z ekstrudera leci w odpad tak dlugo, az ktos
+   przewlecze pozycje i nacisnie Start \u2014 dopiero wtedy nawijanie rusza od zera. */
+$("btnNoDoff").onclick=()=>{const d=S(),hv=handover(cur);
+  if(!confirm(t("noDoffAsk",{n:LAUNCH(cur),w:n1(hv.one),p:n1(progA1(cur))})))return;
+  /* Nawoje sa normalne \u2014 zapisujemy je zwyklymi zasadami: od progu A1, nizej A2,
+     pozycje z baranem albo zrywem na B. W odpad idzie tylko to, co ekstruder
+     wypuszcza w czasie przewlekania, bo nikt tego nie nawija. */
+  const nr=d.obciag;
+  if(!registerDoff(cur,Date.now(),"man")){toast(t("cycNo"));return;}
+  jrn(cur,"noobc",{n:nr});
+  d.noDoff=true;d.launched=0;syncZ(cur);
+  setState("odpad");toast(t("noDoffOk"));};
 $("btnStop").onclick=()=>setState("stop");
 /* Koniec produkcji = zlecenie zrobione. Wszystko, co lezy niespakowane, liczy sie
    jako spakowane do tego zlecenia, liczniki ida na zero, a numer znika z maszyny —
@@ -1783,8 +1805,14 @@ $("btnResume").onclick=()=>{const d=S(),from=d.state,now=Date.now();
        normalnie, z waga i gatunkiem policzonym z czasu nawijania. */
     const hv=handover(cur),one=hv.one,all=hv.kgNow;
     const nowy=function(){d.obciag=(d.obciag||0)+1;d.doffStart=now;d.dwDoff=0;
+      d.launched=POS(cur);
       d.zrywCycPos=[];d.wlokPos=[];d.baranPos=[];d.zrywKgPos={};syncZ(cur);};
-    if(all>0.01){
+    /* Po nieudanej podmianie nawoje sa juz zapisane, a numer podniesiony \u2014 tu tylko
+       zaczynamy nawijac od zera, bo przez caly przestoj nitka szla w odpad. */
+    if(d.noDoff){d.noDoff=false;
+      d.doffStart=now;d.dwDoff=0;d.launched=POS(cur);
+      d.zrywCycPos=[];d.wlokPos=[];d.baranPos=[];d.zrywKgPos={};syncZ(cur);}
+    else if(all>0.01){
       if(one<PROG_ODPAD&&confirm(t("scrapAsk",{w:n1(one),k:n1(all)}))){
         d.utyl.kg=+(d.utyl.kg+all).toFixed(2);
         jrn(cur,"lostLoad",{kg:n1(all)});nowy();}
@@ -1973,7 +2001,7 @@ function paint(){
   $("stText").innerHTML=stName+'<em id="stSub"></em>';
   $("stSub").textContent=stopped?t("stopSince",{t:clk(d.stateSince),d:hm(now-d.stateSince)}):"";
   $("btnResume").hidden=!stopped;
-  $("btnStop").hidden=stopped;$("btnAwaria").hidden=stopped;
+  $("btnStop").hidden=stopped;$("btnAwaria").hidden=stopped;$("btnNoDoff").hidden=stopped;
   [["btnAwaria","awaria"],["btnStop","stop"],["btnKoniec","koniec"],["btnStart","rozruch"]]
     .forEach(([b,st])=>$(b).classList.toggle("back",d.state===st));
   $("btnKolor").classList.toggle("back",!!d.ord.kolor);
@@ -2314,12 +2342,17 @@ function cycSick(id){const c=cycMs(id);return c>0&&(c<20*60000||c>12*HOUR);}
 const GRACE=20*60000;
 function doffTarget(id){const d=db[id],c=cycMs(id);
   if(c<=0)return null;
-  const base=d.doffStart+downNow(id)+(d.cfg.tAdj||0)*60000,el=Date.now()-base;
-  /* n to numer nastepnej podmiany liczac od ostatniej. Nigdy nie schodzi ponizej 1:
-     przez pierwsze minuty po podmianie korekta zegara wypycha "base" w przyszlosc,
-     el wychodzi ujemne i n=0 pokazywalo jako nastepna te podmiane, ktora wlasnie byla —
-     odliczanie stawalo na paru minutach zamiast na pelnym cyklu. */
-  let n=Math.floor(el/c)+1; if(n<1)n=1;
+  /* "raw" to kotwica cyklu bez korekty zegara — po niej poznajemy, o co chodzi:
+       kotwica w przyszlosci = recznie wpisana pierwsza podmiana na zmianie,
+         ona sama jest najblizsza podmiana (n=0), odliczamy do niej;
+       kotwica w przeszlosci = podmiana, ktora juz byla,
+         nastepna wypada najwczesniej o caly cykl pozniej (n>=1).
+     Bez tego rozroznienia korekta zegara wypychala baze w przyszlosc tuz po podmianie
+     i odliczanie stawalo na paru minutach zamiast na pelnym cyklu. */
+  const raw=d.doffStart+downNow(id),now_=Date.now();
+  const base=raw+(d.cfg.tAdj||0)*60000,el=now_-base;
+  let n=Math.floor(el/c)+1;
+  if(raw>now_)n=0; else if(n<1)n=1;
   const next=base+n*c, prev=base+(n-1)*c;
   if(n>1&&Date.now()-prev<=GRACE)return{ts:prev,late:true,nr:n-1};
   return{ts:next,late:false,nr:n};}
