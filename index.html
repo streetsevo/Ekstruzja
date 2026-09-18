@@ -269,6 +269,7 @@
       <button class="tgl" id="btnAwaria"></button>
       <button class="tgl" id="btnNoDoff" style="grid-column:1/-1"></button>
     </div>
+    <div class="flag warn" id="roleFlag" style="margin:0 14px 12px" hidden></div>
     <div class="pad">
       <div class="clock num" id="cd">--:--:--</div>
       <div class="sub num" id="doffInfo">&nbsp;</div>
@@ -571,7 +572,7 @@ const LINES=[
 const L_=id=>LINES.find(l=>l.id===id), POS=id=>L_(id).pos, PAL=id=>L_(id).pal;
 /* C to odpad, nie gatunek produkcji — nie wchodzi do magazynu, palet ani zlecenia.
    G  — gatunki liczone jako produkcja.  GC — kolumny raportu, razem z C. */
-const APPV="v57";
+const APPV="v58";
 const G=["a1","a2","b"], GC=["a1","a2","b","c"], GN={a1:"A1",a2:"A2",b:"B",c:"C"};
 
 const mkG=()=>({a1:{n:0,kg:0},a2:{n:0,kg:0},b:{n:0,kg:0},c:{n:0,kg:0}});
@@ -615,6 +616,7 @@ const T={pl:{
  roleNoteD:"Na dole: nawijanie, podmiany i gatunki.",
  roleNoteG:"Na górze: ekstruder i przewlekanie. Podmiany liczą się dalej.",
  roleNoteOff:"Wolne: obciągi liczą się dalej, ale nie wchodzą do raportu — nikt nie zapisał sztuk ani gatunków.",
+ roleFlagOff:"Rola: wolne — podmiany tylko podnoszą numer. Nawoje nie wchodzą do magazynu ani do raportu. Przełącz na „Na dole” albo „Na górze”, jeśli jesteś na zmianie.",
  jObcOff:"Obciąg {n} — wolne, bez danych",roleRap:"Stanowisko", scrapAsk:"Zaczęty obciąg: {w} kg na pozycji, razem {k} kg.\n\nW odpad?  Nie = wchodzi do produkcji z tą wagą i gatunkiem.",stRozruch:"Start zlecenia — ekstruder bez produkcji",
  alreadyAsk:"Produkcja już szła. Który obciąg schodzi teraz?",
  alreadyBad:"Podaj numer obciągu",alreadyOk:"Produkcja od obciągu {n}",
@@ -802,6 +804,7 @@ const T={pl:{
  roleNoteD:"Downstairs: winding, doffings and grades.",
  roleNoteG:"Upstairs: extruder and re-threading. Doffings keep counting.",
  roleNoteOff:"Day off: loads keep counting but do not enter the report — nobody recorded pieces or grades.",
+ roleFlagOff:"Role: day off — doffings only advance the number. Packages do not enter stock or the report. Switch to \u201eDownstairs\u201d or \u201eUpstairs\u201d if you are on shift.",
  jObcOff:"Load {n} — day off, no data",roleRap:"Position", scrapAsk:"Started load: {w} kg per position, {k} kg in total.\n\nTo waste?  No = it goes into production with that weight and grade.",stRozruch:"Order start — extruder, no production",
  alreadyAsk:"Production was already running. Which load is coming off now?",
  alreadyBad:"Enter the load number",alreadyOk:"Production from load {n}",
@@ -1716,10 +1719,8 @@ function autoDoffs(){const now=Date.now();let any=false;
     let c=cycMs(l.id),g=0;
     if(cycSick(l.id))return;
     while(g++<24){
-      const adj=(d.cfg.tAdj||0)*60000,raw=d.doffStart+downNow(l.id);
-      /* wpisana godzina pierwszej podmiany jest terminem sama dla siebie —
-         dopiero kolejne licza sie co pelny cykl od niej */
-      const due=(raw>now?raw:raw+c)+adj;
+      const adj=(d.cfg.tAdj||0)*60000;
+      const due=d.doffStart+downNow(l.id)+c+adj;
       if(due>now)break;
       if(!registerDoff(l.id,due,"auto"))break;
       /* kotwice trzymamy bez korekty: inaczej te pare minut doklada sie
@@ -2053,6 +2054,10 @@ function paint(){
   $("dot").style.background=col[0];$("dot").style.boxShadow="0 0 0 4px "+col[1];
   $("stText").innerHTML=stName+'<em id="stSub"></em>';
   $("stSub").textContent=stopped?t("stopSince",{t:clk(d.stateSince),d:hm(now-d.stateSince)}):"";
+  /* Rola "wolne" cicho zjada dane: podmiany tylko podnosza numer. Piszemy o tym
+     na wierzchu, zeby nikt nie szukal potem znikajacych nawojow. */
+  $("roleFlag").hidden=!roleOff();
+  if(roleOff())$("roleFlag").textContent=t("roleFlagOff");
   $("btnResume").hidden=!stopped;
   $("btnStop").hidden=stopped;$("btnAwaria").hidden=stopped;$("btnNoDoff").hidden=stopped;
   [["btnAwaria","awaria"],["btnStop","stop"],["btnKoniec","koniec"],["btnStart","rozruch"]]
@@ -2403,17 +2408,13 @@ function cycSick(id){const c=cycMs(id);return c>0&&(c<20*60000||c>12*HOUR);}
 const GRACE=20*60000;
 function doffTarget(id){const d=db[id],c=cycMs(id);
   if(c<=0)return null;
-  /* "raw" to kotwica cyklu bez korekty zegara — po niej poznajemy, o co chodzi:
-       kotwica w przyszlosci = recznie wpisana pierwsza podmiana na zmianie,
-         ona sama jest najblizsza podmiana (n=0), odliczamy do niej;
-       kotwica w przeszlosci = podmiana, ktora juz byla,
-         nastepna wypada najwczesniej o caly cykl pozniej (n>=1).
-     Bez tego rozroznienia korekta zegara wypychala baze w przyszlosc tuz po podmianie
-     i odliczanie stawalo na paru minutach zamiast na pelnym cyklu. */
+  /* Kotwica to poczatek obciagu, ktory teraz sie kreci — takze wtedy, gdy operator
+     wpisal godzine pierwszej podmiany (wtedy kotwica jest cofnieta o cykl).
+     n nie schodzi ponizej 1: przez pierwsze minuty po podmianie korekta zegara wypycha
+     baze w przyszlosc i n=0 pokazywaloby jako nastepna te, ktora wlasnie byla. */
   const raw=d.doffStart+downNow(id),now_=Date.now();
   const base=raw+(d.cfg.tAdj||0)*60000,el=now_-base;
-  let n=Math.floor(el/c)+1;
-  if(raw>now_)n=0; else if(n<1)n=1;
+  let n=Math.floor(el/c)+1; if(n<1)n=1;
   const next=base+n*c, prev=base+(n-1)*c;
   if(n>1&&Date.now()-prev<=GRACE)return{ts:prev,late:true,nr:n-1};
   return{ts:next,late:false,nr:n};}
@@ -2467,7 +2468,12 @@ function buildFirst(){const fb=$("firstBox");fb.innerHTML="";DUI={};
       if(!q){toast(t("hmBad"));return;}
       inp.value=hm2(q[0],q[1]);
       const r=timeInShift(l.id,q[0],q[1]);
-      d.firstDoff=r.ts;d.doffStart=r.ts;d.dwDoff=0;    /* ręczna kotwica cyklu */
+      /* Wpisana godzina to moment, w ktorym nawoj ZEJDZIE z maszyny. Obciag, ktory
+         wtedy sie skonczy, zaczal sie caly cykl wczesniej — dlatego kotwice cofamy
+         o cykl. Inaczej ta pierwsza podmiana nie zapisala sie nigdy: program tylko
+         przestawial odliczanie na nastepna, a nawoje przepadaly. */
+      const cq=cycMs(l.id);
+      d.firstDoff=r.ts;d.doffStart=cq>0?r.ts-cq:r.ts;d.dwDoff=0;
       const no=parseInt(obc.value,10);
       if(isFinite(no)&&no>=0)d.obciag=no;              /* np. 27 = maszyna zrobiła już 26 */
       jrn(l.id,"first",{h:clk(r.ts),n:d.obciag});
