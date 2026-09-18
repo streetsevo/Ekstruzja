@@ -572,7 +572,7 @@ const LINES=[
 const L_=id=>LINES.find(l=>l.id===id), POS=id=>L_(id).pos, PAL=id=>L_(id).pal;
 /* C to odpad, nie gatunek produkcji — nie wchodzi do magazynu, palet ani zlecenia.
    G  — gatunki liczone jako produkcja.  GC — kolumny raportu, razem z C. */
-const APPV="v58";
+const APPV="v59";
 const G=["a1","a2","b"], GC=["a1","a2","b","c"], GN={a1:"A1",a2:"A2",b:"B",c:"C"};
 
 const mkG=()=>({a1:{n:0,kg:0},a2:{n:0,kg:0},b:{n:0,kg:0},c:{n:0,kg:0}});
@@ -2031,7 +2031,7 @@ function paint(){
   $("hLine").textContent=L_(cur).name;
   $("hSub").textContent=(sb.night?t("night"):t("day"))+" · "+clk(sb.start)+"–"+clk(sb.end)+(o.nr?" · "+o.nr:"");
 
-  const cTh=cycleTh(cur),cRe=cycleRe(cur),kRe=kghRe(cur),cUse=cRe>0?cRe:cTh;
+  const cTh=cycleTh(cur),cRe=cycleRe(cur),kRe=kghRe(cur),cUse=cycMs(cur)/HOUR;
   const dwD=downNow(cur),stopped=paused(cur),card=$("doffCard");
   const ST={run:"run",proba:"stProba",odpad:"stOdpad",awaria:"stAwaria",stop:"stopped",koniec:"stKoniec",rozruch:"stRozruch"};
   const stName=t(ST[d.state]||"run");
@@ -2397,7 +2397,13 @@ function paintPal(){
 /* ---------- harmonogram podmian ----------
    Każda nawijarka liczy się osobno. E1 podaje nitkę do N1A i N1B, ale nawijają niezależnie:
    zryw na N1A nie zatrzymuje N1B, więc godziny podmian się rozjeżdżają. */
-function cycMs(id){const r=cycleRe(id);return (r>0?r:cycleTh(id))*HOUR;}
+/* Zrodlo cyklu, od najpewniejszego: pelny cykl przepisany z panelu maszyny — maszyna
+   zna go dokladnie; potem cykl zmierzony z podmian; na koncu wyliczony z wydajnosci.
+   Zmierzony bywa dluzszy od prawdziwego, bo odstepy miedzy zapisami lapia kazde
+   spoznienie — dlatego nie moze przebijac liczby wprost z maszyny. */
+function cycMs(id){const m=db[id].cfg.cycMin||0;
+  if(m>0)return m*60000;
+  const r=cycleRe(id);return (r>0?r:cycleTh(id))*HOUR;}
 /* Cykl krotszy niz 20 min albo dluzszy niz 12 h to prawie na pewno zle wpisana
    liczba. Automat podmian wtedy stoi — wiec i odliczanie nie ma prawa udawac,
    ze cos jest nalezne; zamiast czerwonego "Opoznienie" mowimy, co jest nie tak. */
